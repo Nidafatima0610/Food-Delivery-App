@@ -45,7 +45,7 @@ class RestaurantCard extends StatelessWidget {
                       const Icon(Icons.star, color: Colors.orange, size: 16),
                       const SizedBox(width: 4),
                       Text('${restaurant.rating}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Text(' (${restaurant.reviewCount}) • ${restaurant.cuisine}', style: AppStyles.body),
+                      Expanded(child: Text(' (${restaurant.reviewCount}) • ${restaurant.cuisine}', style: AppStyles.body, overflow: TextOverflow.ellipsis)),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -57,7 +57,7 @@ class RestaurantCard extends StatelessWidget {
                       const SizedBox(width: 16),
                       const Icon(Icons.delivery_dining, size: 16, color: AppColors.textLight),
                       const SizedBox(width: 4),
-                      Text('\$${restaurant.deliveryFee}', style: AppStyles.body),
+                      Expanded(child: Text('\$${restaurant.deliveryFee}', style: AppStyles.body, overflow: TextOverflow.ellipsis)),
                     ],
                   )
                 ],

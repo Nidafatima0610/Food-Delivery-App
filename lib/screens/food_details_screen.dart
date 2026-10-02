@@ -70,13 +70,33 @@ class _FoodDetailsScreenState extends ConsumerState<FoodDetailsScreen> {
                   final cartNotifier = ref.read(cartProvider.notifier);
                   final item = CartItem(food: widget.food, quantity: quantity, customizations: selectedAddons);
                   if (!cartNotifier.canAddItem(widget.food.restaurantId)) {
-                     // trigger replacement logic
-                     cartNotifier.replaceCart(item);
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Replace Cart Item?'),
+                        content: const Text('Your cart contains items from a different restaurant. Do you want to discard them and add this item?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              cartNotifier.replaceCart(item);
+                              Navigator.pop(context);
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to cart!')));
+                            },
+                            child: const Text('Replace'),
+                          ),
+                        ],
+                      ),
+                    );
                   } else {
                      cartNotifier.addItem(item);
+                     Navigator.pop(context);
+                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to cart!')));
                   }
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to cart!')));
                 },
                 child: Text('Add to Cart - \$${total.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 18)),
               ),

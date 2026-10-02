@@ -130,6 +130,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: () {
+                    if (cartItems.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Your cart is empty!')));
+                      return;
+                    }
                     if (formKey.currentState!.validate()) {
                       final order = OrderModel(
                         id: const Uuid().v4(),
