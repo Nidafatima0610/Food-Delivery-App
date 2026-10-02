@@ -24,4 +24,18 @@ class OrderModel {
     required this.date,
     required this.status,
   });
+
+  Map<String, dynamic> toJson() => {
+    'id': id, 'restaurantId': restaurantId, 
+    'items': items.map((i) => i.toJson()).toList(),
+    'subtotal': subtotal, 'deliveryFee': deliveryFee, 'discount': discount, 'total': total,
+    'date': date.toIso8601String(), 'status': status.index,
+  };
+
+  factory OrderModel.fromJson(Map<String, dynamic> json) => OrderModel(
+    id: json['id'], restaurantId: json['restaurantId'],
+    items: (json['items'] as List).map((i) => CartItem.fromJson(i)).toList(),
+    subtotal: (json['subtotal'] ?? 0.0).toDouble(), deliveryFee: (json['deliveryFee'] ?? 0.0).toDouble(), discount: (json['discount'] ?? 0.0).toDouble(), total: (json['total'] ?? 0.0).toDouble(),
+    date: DateTime.parse(json['date']), status: OrderStatus.values[json['status']],
+  );
 }

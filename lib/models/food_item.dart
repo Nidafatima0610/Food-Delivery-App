@@ -22,4 +22,16 @@ class FoodItem {
     this.popular = false,
     this.available = true,
   });
+
+  Map<String, dynamic> toJson() => {
+    'id': id, 'restaurantId': restaurantId, 'name': name, 'description': description,
+    'image': image, 'price': price, 'category': category, 'rating': rating,
+    'popular': popular, 'available': available,
+  };
+
+  factory FoodItem.fromJson(Map<String, dynamic> json) => FoodItem(
+    id: json['id'], restaurantId: json['restaurantId'], name: json['name'], description: json['description'],
+    image: json['image'], price: (json['price'] ?? 0.0).toDouble(), category: json['category'], rating: (json['rating'] ?? 0.0).toDouble(),
+    popular: json['popular'], available: json['available'],
+  );
 }

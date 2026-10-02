@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/constants.dart';
 import '../providers/app_providers.dart';
+import 'offers_screen.dart';
+import 'notifications_screen.dart';
+import '../providers/auth_provider.dart';
+import 'auth/login_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -11,12 +15,35 @@ class ProfileScreen extends ConsumerWidget {
     final settings = ref.watch(settingsProvider);
     final isDark = settings['darkMode'] ?? false;
     final notifications = settings['notifications'] ?? true;
+    final user = ref.watch(authProvider);
+    final unreadNotifs = ref.watch(notificationsProvider).where((n) => !n.isRead).length;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile', style: TextStyle(color: AppColors.textDark)),
         backgroundColor: AppColors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.notifications_outlined, color: AppColors.textDark),
+                if (unreadNotifs > 0)
+                  Positioned(
+                    right: -2, top: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(4), decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      child: Text('$unreadNotifs', style: const TextStyle(color: Colors.white, fontSize: 10)),
+                    ),
+                  )
+              ],
+            ),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+            },
+          )
+        ],
       ),
       backgroundColor: AppColors.background,
       body: ListView(
@@ -29,9 +56,19 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const Center(child: Text('John Doe', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold))),
-          const Center(child: Text('john.doe@example.com', style: TextStyle(color: AppColors.textLight))),
+          Center(child: Text(user?.name ?? 'Guest', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold))),
+          Center(child: Text(user?.email ?? 'Please log in', style: const TextStyle(color: AppColors.textLight))),
           const SizedBox(height: 32),
+          
+          ListTile(
+            leading: const Icon(Icons.local_offer_outlined),
+            title: const Text('Offers & Deals'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const OffersScreen()));
+            },
+          ),
+          const Divider(),
           const Text('Settings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           SwitchListTile(
@@ -49,23 +86,14 @@ class ProfileScreen extends ConsumerWidget {
             },
           ),
           const Divider(),
-          ListTile(
-            leading: const Icon(Icons.location_on_outlined),
-            title: const Text('Delivery Addresses'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
-          ),
-          ListTile(
-            leading: const Icon(Icons.payment_outlined),
-            title: const Text('Payment Methods'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
-          ),
-          const SizedBox(height: 24),
-          TextButton(
-            onPressed: () {},
-            child: const Text('Log Out', style: TextStyle(color: Colors.red, fontSize: 16)),
-          )
+          if (user != null)
+            TextButton(
+              onPressed: () {
+                ref.read(authProvider.notifier).logout();
+                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginScreen()), (r) => false);
+              },
+              child: const Text('Log Out', style: TextStyle(color: Colors.red, fontSize: 16)),
+            )
         ],
       ),
     );

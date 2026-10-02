@@ -11,6 +11,17 @@ class CartItem {
     this.customizations = const [],
   });
   
-  // Example: flat $1.00 per customization
   double get totalPrice => (food.price + (customizations.length * 1.0)) * quantity;
+
+  Map<String, dynamic> toJson() => {
+    'food': food.toJson(),
+    'quantity': quantity,
+    'customizations': customizations,
+  };
+
+  factory CartItem.fromJson(Map<String, dynamic> json) => CartItem(
+    food: FoodItem.fromJson(json['food']),
+    quantity: json['quantity'],
+    customizations: List<String>.from(json['customizations'] ?? []),
+  );
 }

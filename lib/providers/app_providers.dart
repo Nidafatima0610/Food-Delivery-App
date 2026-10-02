@@ -5,11 +5,9 @@ import '../models/cart_item.dart';
 import '../models/order.dart';
 import '../models/address.dart';
 import '../services/storage_service.dart';
+import '../models/notification.dart';
 
-// Ensure this is initialized in main.dart
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError();
-});
+final sharedPreferencesProvider = Provider<SharedPreferences>((ref) => throw UnimplementedError());
 
 final storageServiceProvider = Provider<StorageService>((ref) {
   return StorageService(ref.watch(sharedPreferencesProvider));
@@ -26,7 +24,21 @@ class CartState {
 
 class CartNotifier extends Notifier<CartState> {
   @override
-  CartState build() => CartState(items: []);
+  CartState build() {
+    final str = ref.watch(storageServiceProvider).getString('cart');
+    if (str != null) {
+      final List dec = jsonDecode(str);
+      final items = dec.map((i) => CartItem.fromJson(i)).toList();
+      if (items.isNotEmpty) {
+        return CartState(items: items, restaurantId: items.first.food.restaurantId);
+      }
+    }
+    return CartState(items: []);
+  }
+
+  void _save() {
+    ref.read(storageServiceProvider).setString('cart', jsonEncode(state.items.map((i) => i.toJson()).toList()));
+  }
 
   bool canAddItem(String resId) {
     if (state.items.isEmpty) return true;
@@ -34,10 +46,7 @@ class CartNotifier extends Notifier<CartState> {
   }
 
   void addItem(CartItem item) {
-    if (!canAddItem(item.food.restaurantId)) {
-      // Must be handled by UI dialog to call replaceCart
-      return;
-    }
+    if (!canAddItem(item.food.restaurantId)) return;
     
     final index = state.items.indexWhere((i) => i.food.id == item.food.id);
     List<CartItem> newItems = List.from(state.items);
@@ -47,10 +56,12 @@ class CartNotifier extends Notifier<CartState> {
       newItems.add(item);
     }
     state = state.copyWith(items: newItems, restaurantId: item.food.restaurantId);
+    _save();
   }
 
   void replaceCart(CartItem item) {
     state = CartState(items: [item], restaurantId: item.food.restaurantId);
+    _save();
   }
 
   void removeItem(String foodId) {
@@ -59,6 +70,7 @@ class CartNotifier extends Notifier<CartState> {
       items: newItems, 
       restaurantId: newItems.isEmpty ? null : state.restaurantId
     );
+    _save();
   }
   
   void updateQuantity(String foodId, int quantity) {
@@ -73,10 +85,12 @@ class CartNotifier extends Notifier<CartState> {
       return item;
     }).toList();
     state = state.copyWith(items: newItems);
+    _save();
   }
 
   void clear() {
     state = CartState(items: []);
+    _save();
   }
 
   double get subtotal => state.items.fold(0.0, (sum, item) => sum + item.totalPrice);
@@ -86,14 +100,45 @@ final cartProvider = NotifierProvider<CartNotifier, CartState>(() => CartNotifie
 
 class OrdersNotifier extends Notifier<List<OrderModel>> {
   @override
-  List<OrderModel> build() => [];
+  List<OrderModel> build() {
+    final strList = ref.watch(storageServiceProvider).getStringList('orders');
+    return strList.map((e) => OrderModel.fromJson(jsonDecode(e))).toList();
+  }
 
   void addOrder(OrderModel order) {
     state = [order, ...state];
+    _save();
+  }
+
+  void _save() {
+    ref.read(storageServiceProvider).setStringList('orders', state.map((e) => jsonEncode(e.toJson())).toList());
   }
 }
 
 final ordersProvider = NotifierProvider<OrdersNotifier, List<OrderModel>>(() => OrdersNotifier());
+
+class NotificationsNotifier extends Notifier<List<AppNotification>> {
+  @override
+  List<AppNotification> build() {
+    final strList = ref.watch(storageServiceProvider).getStringList('notifications');
+    return strList.map((e) => AppNotification.fromJson(jsonDecode(e))).toList();
+  }
+
+  void addNotification(AppNotification notification) {
+    state = [notification, ...state];
+    _save();
+  }
+
+  void markAsRead(String id) {
+    state = state.map((n) => n.id == id ? AppNotification(id: n.id, title: n.title, message: n.message, date: n.date, isRead: true) : n).toList();
+    _save();
+  }
+
+  void _save() {
+    ref.read(storageServiceProvider).setStringList('notifications', state.map((e) => jsonEncode(e.toJson())).toList());
+  }
+}
+final notificationsProvider = NotifierProvider<NotificationsNotifier, List<AppNotification>>(() => NotificationsNotifier());
 
 class FavoritesNotifier extends Notifier<List<String>> {
   @override
