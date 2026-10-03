@@ -443,7 +443,7 @@ class SampleData {
     ),
     Restaurant(
       id: 'r23',
-      name: 'Bake O’ Clock Artisan Patisserie',
+      name: "Bake O' Clock Artisan Patisserie",
       image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80',
       cuisine: 'Bakery',
       rating: 4.8,
@@ -1980,14 +1980,32 @@ class SampleData {
       title: '25% OFF Weekend Special',
       description: 'Exclusive 25% discount for weekend family feasts and party platters.',
     ),
+    Coupon(
+      code: 'FAMILY500',
+      discountValue: 500.0,
+      isPercentage: false,
+      minOrderAmount: 2500.0,
+      title: 'Rs. 500 Family Feast Deal',
+      description: 'Flat Rs. 500 off on large family gatherings, platters and dinner parties.',
+    ),
+    Coupon(
+      code: 'BURGER20',
+      discountValue: 20.0,
+      isPercentage: true,
+      minOrderAmount: 500.0,
+      title: '20% OFF Burgers & Broast',
+      description: 'Get 20% discount on gourmet smashed burgers, fried chicken and loaded wraps.',
+    ),
   ];
 
   static List<Restaurant> getRestaurantsForCategory(String category) {
     if (category == 'All') return List<Restaurant>.from(restaurants);
     final catLower = category.toLowerCase().trim();
     return restaurants.where((r) {
-      if (r.cuisine.toLowerCase() == catLower) return true;
-      if (r.cuisine.toLowerCase().contains(catLower)) return true;
+      if (r.cuisine.toLowerCase() == catLower || r.cuisine.toLowerCase().contains(catLower)) return true;
+      if (catLower == 'desi' || catLower == 'karahi') {
+        if (r.cuisine.toLowerCase().contains('pakistani') || r.cuisine.toLowerCase().contains('biryani')) return true;
+      }
       return foods.any((f) =>
           f.restaurantId == r.id &&
           (f.category.toLowerCase() == catLower ||
@@ -1999,10 +2017,27 @@ class SampleData {
   static List<FoodItem> getFoodsForCategory(String category) {
     if (category == 'All') return List<FoodItem>.from(foods);
     final catLower = category.toLowerCase().trim();
-    return foods.where((f) =>
-        f.category.toLowerCase() == catLower ||
-        f.category.toLowerCase().contains(catLower) ||
-        f.name.toLowerCase().contains(catLower)).toList();
+    return foods.where((f) {
+      if (catLower == 'desi' || catLower == 'karahi') {
+        return f.category.toLowerCase().contains('pakistani') ||
+            f.category.toLowerCase().contains('biryani') ||
+            f.name.toLowerCase().contains('karahi') ||
+            f.name.toLowerCase().contains('handi');
+      }
+      return f.category.toLowerCase() == catLower ||
+          f.category.toLowerCase().contains(catLower) ||
+          f.name.toLowerCase().contains(catLower);
+    }).toList();
+  }
+
+  static List<Restaurant> getRestaurantsForArea(String area) {
+    if (area.isEmpty || area == 'All' || area == 'All Areas') {
+      return List<Restaurant>.from(restaurants);
+    }
+    final areaLower = area.toLowerCase().trim();
+    return restaurants.where((r) =>
+        r.area.toLowerCase().contains(areaLower) ||
+        r.address.toLowerCase().contains(areaLower)).toList();
   }
 
   static List<FoodItem> getPopularDishes() {
@@ -2017,24 +2052,39 @@ class SampleData {
     }
   }
 
+  static FoodItem? getFoodById(String id) {
+    try {
+      return foods.firstWhere((f) => f.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Curated diverse subsets to completely eliminate duplicate restaurants in adjacent Home sections
   static List<Restaurant> getPopularRestaurants() {
-    return restaurants.where((r) => r.isPopular || r.featured).toList();
+    const popularIds = {'r3', 'r7', 'r13', 'r15', 'r21', 'r25'};
+    final list = restaurants.where((r) => popularIds.contains(r.id)).toList();
+    return list.isNotEmpty ? list : restaurants.where((r) => r.isPopular).toList();
   }
 
   static List<Restaurant> getTopRatedRestaurants() {
-    final list = restaurants.where((r) => r.rating >= 4.8).toList();
+    const topRatedIds = {'r2', 'r8', 'r10', 'r14', 'r18', 'r22'};
+    final list = restaurants.where((r) => topRatedIds.contains(r.id)).toList();
     list.sort((a, b) => b.rating.compareTo(a.rating));
-    return list;
+    return list.isNotEmpty ? list : restaurants.where((r) => r.rating >= 4.8).toList();
   }
 
   static List<Restaurant> getFastDeliveryRestaurants() {
-    final list = restaurants.where((r) => r.deliveryTime.contains('15') || r.distance <= 1.5).toList();
+    const fastIds = {'r5', 'r12', 'r17', 'r19', 'r23', 'r1'};
+    final list = restaurants.where((r) => fastIds.contains(r.id)).toList();
     list.sort((a, b) => a.distance.compareTo(b.distance));
-    return list;
+    return list.isNotEmpty ? list : restaurants.where((r) => r.deliveryTime.contains('15')).toList();
   }
 
   static List<Restaurant> getDealRestaurants() {
-    return restaurants.where((r) => r.offer != null).toList();
+    const dealIds = {'r4', 'r6', 'r9', 'r11', 'r20', 'r24'};
+    final list = restaurants.where((r) => dealIds.contains(r.id)).toList();
+    return list.isNotEmpty ? list : restaurants.where((r) => r.offer != null).toList();
   }
 
   static List<Restaurant> getNearbyRestaurants() {
@@ -2044,9 +2094,8 @@ class SampleData {
   }
 
   static List<Restaurant> getRecommendedRestaurants() {
-    // Curated diverse selection across different cuisines and areas
-    final selectedIds = {'r1', 'r2', 'r4', 'r7', 'r10', 'r13', 'r18', 'r25'};
-    return restaurants.where((r) => selectedIds.contains(r.id)).toList();
+    final list = List<Restaurant>.from(restaurants);
+    return list;
   }
 }
 

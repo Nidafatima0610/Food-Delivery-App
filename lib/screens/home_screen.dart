@@ -14,6 +14,8 @@ import 'search_screen.dart';
 import 'notifications_screen.dart';
 import 'profile_screen.dart';
 import 'offers_screen.dart';
+import 'cart_screen.dart';
+import '../providers/auth_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -26,58 +28,74 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   String selectedCategory = 'All';
   String currentAddress = 'Home, Model Town A, Bahawalpur';
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
   void _showAddressSelector() {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Choose Delivery Location', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
+      builder: (context) {
+        final savedAddresses = ref.watch(addressesProvider);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Choose Delivery Location', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (savedAddresses.isNotEmpty)
+                  ...savedAddresses.map((a) {
+                    final isSel = currentAddress.contains(a.addressLine);
+                    return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(vertical: 2),
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isSel ? AppColors.primary.withValues(alpha: 0.1) : Colors.grey.shade100,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.location_on, color: isSel ? AppColors.primary : Colors.grey.shade700),
+                      ),
+                      title: Text(a.label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      subtitle: Text(a.addressLine, style: const TextStyle(fontSize: 13, color: AppColors.textLight), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      trailing: isSel ? const Icon(Icons.check_circle, color: AppColors.primary) : null,
+                      onTap: () {
+                        setState(() {
+                          currentAddress = '${a.label}, ${a.addressLine}';
+                        });
+                        Navigator.pop(context);
+                      },
+                    );
+                  })
+                else ...[
+                  _buildAddressTile('Home', 'House 14, Model Town A, Bahawalpur', Icons.home_outlined),
+                  const Divider(height: 1),
+                  _buildAddressTile('Work / Office', 'Commercial Area, Cantt, Bahawalpur', Icons.work_outline),
                 ],
-              ),
-              const SizedBox(height: 12),
-              _buildAddressTile(
-                'Home',
-                'House 14, Model Town A, Bahawalpur',
-                Icons.home_outlined,
-              ),
-              const Divider(height: 1),
-              _buildAddressTile(
-                'Work / Office',
-                'Commercial Area, Cantt, Bahawalpur',
-                Icons.work_outline,
-              ),
-              const Divider(height: 1),
-              _buildAddressTile(
-                'University / Campus',
-                'IUB Baghdad-ul-Jadeed Campus, University Road, Bahawalpur',
-                Icons.school_outlined,
-              ),
-              const Divider(height: 1),
-              _buildAddressTile(
-                'Family / Friends',
-                'Circular Road, Near Stadium, Bahawalpur',
-                Icons.people_outline,
-              ),
-              const SizedBox(height: 16),
-            ],
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -231,6 +249,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final unreadNotifs = ref.watch(notificationsProvider).where((n) => !n.isRead).length;
     final previousOrders = ref.watch(ordersProvider);
+    final user = ref.watch(authProvider);
 
     // Filtered data based on selected category
     final categoryRestaurants = SampleData.getRestaurantsForCategory(selectedCategory);
@@ -357,9 +376,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
+              // 1.5 Dynamic Greeting & City Context
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${_getGreeting()}, ${user?.name.split(' ').first ?? 'Foodie'} 👋',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Craving something delicious in Bahawalpur today?',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               // 2. Search Bar
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 child: GestureDetector(
                   onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen()));
@@ -815,6 +860,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                           duration: const Duration(seconds: 2),
                                         ),
                                       );
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => const CartScreen()),
+                                      );
                                     },
                                     child: const Text('Reorder', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
                                   ),
@@ -1216,7 +1265,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
-                    children: recommendedRestaurants.take(5).map((restaurant) => RestaurantCard(
+                    children: recommendedRestaurants.map((restaurant) => RestaurantCard(
                       restaurant: restaurant,
                       onTap: () {
                         Navigator.push(

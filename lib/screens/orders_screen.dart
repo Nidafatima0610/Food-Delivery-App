@@ -103,21 +103,15 @@ class OrdersScreen extends ConsumerWidget {
 
   void _showReorderSuccess(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Meal items added to cart!'),
+      const SnackBar(
+        content: Text('Meal items added to cart!'),
         backgroundColor: AppColors.primary,
-        duration: const Duration(seconds: 3),
-        action: SnackBarAction(
-          label: 'View Cart',
-          textColor: Colors.white,
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CartScreen()),
-            );
-          },
-        ),
+        duration: Duration(seconds: 2),
       ),
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CartScreen()),
     );
   }
 

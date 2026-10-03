@@ -33,7 +33,7 @@ class OffersScreen extends ConsumerWidget {
       _copyCode(context, code);
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const CheckoutScreen()),
+        MaterialPageRoute(builder: (_) => CheckoutScreen(initialCouponCode: code)),
       );
     } else {
       _copyCode(context, code);
@@ -41,9 +41,15 @@ class OffersScreen extends ConsumerWidget {
         context: context,
         builder: (ctx) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text('Code "$code" Copied!'),
+          title: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.green, size: 22),
+              const SizedBox(width: 8),
+              Expanded(child: Text('Code "$code" Copied!')),
+            ],
+          ),
           content: const Text(
-            'Your cart is currently empty. Would you like to explore top restaurants to use this deal?',
+            'Your cart is currently empty. Would you like to explore top Bahawalpur restaurants to use this deal?',
           ),
           actions: [
             TextButton(
@@ -59,7 +65,7 @@ class OffersScreen extends ConsumerWidget {
                   MaterialPageRoute(builder: (_) => const RestaurantListScreen(title: 'All Restaurants')),
                 );
               },
-              child: const Text('Browse Food', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text('Browse Restaurants', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -116,42 +122,48 @@ class OffersScreen extends ConsumerWidget {
                           color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.local_offer, color: AppColors.primary, size: 24),
+                        child: const Icon(Icons.local_offer, color: AppColors.primary, size: 22),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              coupon.title.isNotEmpty ? coupon.title : discountBadge,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    coupon.title.isNotEmpty ? coupon.title : discountBadge,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.textDark),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green.shade50,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: Colors.green.shade200),
+                                  ),
+                                  child: Text(
+                                    discountBadge,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green.shade800,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 3),
                             Text(
                               'Min. order: ${AppFormatters.currency(coupon.minOrderAmount)}',
                               style: const TextStyle(fontSize: 12, color: AppColors.textLight),
                             ),
                           ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.green.shade200),
-                        ),
-                        child: Text(
-                          discountBadge,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green.shade800,
-                          ),
                         ),
                       ),
                     ],
@@ -171,8 +183,12 @@ class OffersScreen extends ConsumerWidget {
                   const Divider(height: 1),
                   const SizedBox(height: 12),
 
-                  // Bottom Action Bar: Code Pill & Buttons (Responsive Layout)
-                  Row(
+                  // Bottom Action Bar: Code Pill & Buttons (Responsive Wrap Layout to guarantee ZERO overflow)
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       // Coupon Code Pill
                       Container(
@@ -199,32 +215,35 @@ class OffersScreen extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      const Spacer(),
-                      // Copy Button
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.grey.shade700,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        icon: const Icon(Icons.copy, size: 14),
-                        label: const Text('Copy', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                        onPressed: () => _copyCode(context, coupon.code),
-                      ),
-                      const SizedBox(width: 6),
-                      // Apply Button
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                        onPressed: () => _applyCouponAction(context, ref, coupon.code),
-                        child: const Text(
-                          'Apply',
-                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                        ),
+                      // Action Buttons
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextButton.icon(
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.grey.shade700,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            icon: const Icon(Icons.copy, size: 14),
+                            label: const Text('Copy', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                            onPressed: () => _copyCode(context, coupon.code),
+                          ),
+                          const SizedBox(width: 6),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            onPressed: () => _applyCouponAction(context, ref, coupon.code),
+                            child: const Text(
+                              'Apply',
+                              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

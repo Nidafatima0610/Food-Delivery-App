@@ -9,6 +9,7 @@ import 'notifications_screen.dart';
 import 'orders_screen.dart';
 import 'about_screen.dart';
 import 'auth/login_screen.dart';
+import 'favorites_screen.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -52,6 +53,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
             onPressed: () {
+              final newName = nameController.text.trim();
+              final newPhone = phoneController.text.trim();
+              if (newName.isNotEmpty) {
+                ref.read(authProvider.notifier).updateProfile(newName, newPhone);
+              }
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -117,7 +123,37 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                     title: Text(a.label, style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text(a.addressLine),
-                    trailing: a.isDefault ? const Chip(label: Text('Default', style: TextStyle(fontSize: 11))) : null,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (a.isDefault)
+                          const Chip(
+                            label: Text('Default', style: TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold)),
+                            backgroundColor: Color(0xFFE8F5E9),
+                          )
+                        else
+                          TextButton(
+                            onPressed: () {
+                              ref.read(addressesProvider.notifier).setDefault(a.id);
+                              Navigator.pop(ctx);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('${a.label} set as default address!'), backgroundColor: AppColors.primary),
+                              );
+                            },
+                            child: const Text('Set Default', style: TextStyle(fontSize: 12, color: AppColors.primary)),
+                          ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                          onPressed: () {
+                            ref.read(addressesProvider.notifier).removeAddress(a.id);
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Removed ${a.label}'), backgroundColor: Colors.red),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   )),
                 const SizedBox(height: 12),
                 SizedBox(
@@ -263,6 +299,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 title: Text(area, style: TextStyle(fontWeight: isSel ? FontWeight.bold : FontWeight.normal)),
                 trailing: isSel ? const Icon(Icons.check, color: AppColors.primary) : null,
                 onTap: () {
+                  ref.read(settingsProvider.notifier).setPreferredArea(area);
                   setState(() => selectedArea = area);
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -493,6 +530,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final settings = ref.watch(settingsProvider);
     final isDark = settings['darkMode'] ?? false;
     final notifications = settings['notifications'] ?? true;
+    final currentArea = settings['preferredArea'] ?? 'Model Town, Bahawalpur';
+    final currentLanguage = settings['language'] ?? 'English';
+    selectedArea = currentArea;
+    selectedLanguage = currentLanguage;
     final user = ref.watch(authProvider);
     final unreadNotifs = ref.watch(notificationsProvider).where((n) => !n.isRead).length;
 
@@ -602,6 +643,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               title: 'Saved Addresses',
               subtitle: 'Manage home, work, and family addresses',
               onTap: () => _showSavedAddressesSheet(context),
+            ),
+            const Divider(height: 1),
+            _buildTile(
+              icon: Icons.favorite_border,
+              title: 'Favorites',
+              subtitle: 'Saved restaurants and favorite dishes',
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen())),
             ),
             const Divider(height: 1),
             _buildTile(

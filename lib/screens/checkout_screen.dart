@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/constants.dart';
 import '../core/sample_data.dart';
 import '../providers/app_providers.dart';
+import '../providers/auth_provider.dart';
 import '../models/order.dart';
 import '../models/notification.dart';
 import '../widgets/app_image.dart';
@@ -10,7 +11,8 @@ import 'package:uuid/uuid.dart';
 import 'order_success_screen.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
-  const CheckoutScreen({super.key});
+  final String? initialCouponCode;
+  const CheckoutScreen({super.key, this.initialCouponCode});
 
   @override
   ConsumerState<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -18,16 +20,49 @@ class CheckoutScreen extends ConsumerStatefulWidget {
 
 class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   final TextEditingController _couponController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _notesController = TextEditingController();
   double discountPercentage = 0.0;
   double flatDiscount = 0.0;
   String appliedCouponCode = '';
   String paymentMethod = 'Cash on Delivery';
-  String deliveryAddress = '123 Main St, Apt 4B, Gulberg III, Lahore';
+  String deliveryAddress = 'House 14, Street 3, Model Town A, Bahawalpur';
+  String deliveryLabel = 'Home';
   final formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    final user = ref.read(authProvider);
+    _nameController.text = user?.name ?? 'Umair Raza';
+    _phoneController.text = user?.phone ?? '+92 300 8654321';
+
+    final savedAddresses = ref.read(addressesProvider);
+    if (savedAddresses.isNotEmpty) {
+      final defaultAddr = savedAddresses.firstWhere((a) => a.isDefault, orElse: () => savedAddresses.first);
+      deliveryAddress = defaultAddr.addressLine;
+      deliveryLabel = defaultAddr.label;
+    }
+
+    if (widget.initialCouponCode != null && widget.initialCouponCode!.isNotEmpty) {
+      _couponController.text = widget.initialCouponCode!;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final subtotal = ref.read(cartProvider.notifier).subtotal;
+        final cartState = ref.read(cartProvider);
+        final restaurant = cartState.restaurantId != null ? SampleData.getRestaurantById(cartState.restaurantId!) : null;
+        final deliveryFee = restaurant?.deliveryFee ?? 80.0;
+        applyCoupon(subtotal, deliveryFee);
+      });
+    }
+  }
 
   @override
   void dispose() {
     _couponController.dispose();
+    _nameController.dispose();
+    _phoneController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -64,6 +99,106 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     }
   }
 
+  void _showAddressPicker(BuildContext context) {
+    final addresses = ref.read(addressesProvider);
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Select Delivery Address', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                ],
+              ),
+              const SizedBox(height: 10),
+              ...addresses.map((a) {
+                final isSelected = deliveryAddress == a.addressLine;
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                    color: isSelected ? AppColors.primary : Colors.grey,
+                  ),
+                  title: Text(a.label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  subtitle: Text(a.addressLine, style: const TextStyle(fontSize: 12)),
+                  onTap: () {
+                    setState(() {
+                      deliveryAddress = a.addressLine;
+                      deliveryLabel = a.label;
+                    });
+                    Navigator.pop(ctx);
+                  },
+                );
+              }),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  minimumSize: const Size(double.infinity, 44),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(Icons.edit_location_alt_outlined),
+                label: const Text('Enter Custom Address'),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _showEditAddressDialog(context);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showEditAddressDialog(BuildContext context) {
+    final editController = TextEditingController(text: deliveryAddress);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Delivery Address'),
+        content: TextField(
+          controller: editController,
+          maxLines: 2,
+          decoration: const InputDecoration(
+            hintText: 'House/Street, Area, Bahawalpur',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            onPressed: () {
+              if (editController.text.trim().isNotEmpty) {
+                setState(() {
+                  deliveryAddress = editController.text.trim();
+                  deliveryLabel = 'Custom';
+                });
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Save', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cartState = ref.watch(cartProvider);
@@ -96,8 +231,19 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 1. Delivery Address Card
-              const Text('Delivery Address', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Delivery Address', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  TextButton.icon(
+                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                    icon: const Icon(Icons.swap_horiz, size: 16, color: AppColors.primary),
+                    label: const Text('Change', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+                    onPressed: () => _showAddressPicker(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -115,51 +261,78 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         color: AppColors.primary.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.location_on, color: AppColors.primary, size: 24),
+                      child: const Icon(Icons.location_on, color: AppColors.primary, size: 22),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Home', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          Text(deliveryLabel, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                           const SizedBox(height: 4),
                           Text(
                             deliveryAddress,
-                            style: const TextStyle(color: AppColors.textLight, fontSize: 13),
+                            style: const TextStyle(color: AppColors.textLight, fontSize: 13, height: 1.3),
                           ),
                         ],
                       ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
-                      onPressed: () {
-                        // Dialog to edit delivery address
-                        final editController = TextEditingController(text: deliveryAddress);
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Edit Delivery Address'),
-                            content: TextField(
-                              controller: editController,
-                              decoration: const InputDecoration(border: OutlineInputBorder()),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  setState(() => deliveryAddress = editController.text);
-                                  Navigator.pop(context);
-                                },
-                                child: const Text('Save', style: TextStyle(color: AppColors.primary)),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                      onPressed: () => _showEditAddressDialog(context),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              // 1.5 Contact Information Card
+              const Text('Contact Information', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Recipient Name *',
+                        prefixIcon: Icon(Icons.person_outline, size: 20),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (val) => val == null || val.trim().isEmpty ? 'Please enter recipient name' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'Contact Phone Number (For rider) *',
+                        prefixIcon: Icon(Icons.phone_outlined, size: 20),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a valid contact phone' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _notesController,
+                      decoration: const InputDecoration(
+                        labelText: 'Delivery Instructions (Optional)',
+                        hintText: 'e.g. Ring bell, leave with security guard',
+                        prefixIcon: Icon(Icons.note_alt_outlined, size: 20),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                   ],
                 ),
@@ -413,9 +586,21 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       return;
                     }
 
+                    if (!formKey.currentState!.validate()) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please complete required contact details.'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
                     final restaurantId = cartItems.first.food.restaurantId;
                     final resObj = SampleData.getRestaurantById(restaurantId);
                     final restaurantName = resObj?.name ?? 'Restaurant';
+
+                    final fullDeliveryInfo = '$deliveryAddress\nRecipient: ${_nameController.text.trim()} (${_phoneController.text.trim()})${_notesController.text.trim().isNotEmpty ? "\nNote: ${_notesController.text.trim()}" : ""}';
 
                     final order = OrderModel(
                       id: const Uuid().v4(),
@@ -429,7 +614,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       total: total,
                       date: DateTime.now(),
                       status: OrderStatus.placed,
-                      deliveryAddress: deliveryAddress,
+                      deliveryAddress: fullDeliveryInfo,
                       paymentMethod: paymentMethod,
                     );
 

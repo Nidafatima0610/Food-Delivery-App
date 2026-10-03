@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/food_item.dart';
 import '../core/constants.dart';
+import '../providers/app_providers.dart';
 import 'app_image.dart';
 
 class FoodCard extends StatelessWidget {
@@ -41,12 +43,43 @@ class FoodCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                AppImage(
-                  imageUrl: food.image,
-                  height: 85,
-                  width: 85,
-                  category: food.category,
-                  borderRadius: BorderRadius.circular(12),
+                Stack(
+                  children: [
+                    AppImage(
+                      imageUrl: food.image,
+                      height: 85,
+                      width: 85,
+                      category: food.category,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    Positioned(
+                      top: 4,
+                      left: 4,
+                      child: Consumer(
+                        builder: (context, ref, _) {
+                          final isFav = ref.watch(favoritesProvider).contains(food.id);
+                          return InkWell(
+                            onTap: () {
+                              ref.read(favoritesProvider.notifier).toggleFavorite(food.id);
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.9),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                isFav ? Icons.favorite : Icons.favorite_border,
+                                size: 14,
+                                color: isFav ? Colors.red : AppColors.textDark,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -211,6 +244,33 @@ class FoodHorizontalCard extends StatelessWidget {
                     width: 175,
                     category: food.category,
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                  ),
+                  Positioned(
+                    top: 6,
+                    left: 6,
+                    child: Consumer(
+                      builder: (context, ref, _) {
+                        final isFav = ref.watch(favoritesProvider).contains(food.id);
+                        return InkWell(
+                          onTap: () {
+                            ref.read(favoritesProvider.notifier).toggleFavorite(food.id);
+                          },
+                          borderRadius: BorderRadius.circular(14),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              isFav ? Icons.favorite : Icons.favorite_border,
+                              size: 14,
+                              color: isFav ? Colors.red : AppColors.textDark,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                   Positioned(
                     bottom: 6,

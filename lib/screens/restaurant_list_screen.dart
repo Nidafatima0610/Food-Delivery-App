@@ -5,6 +5,7 @@ import '../core/sample_data.dart';
 import '../models/restaurant.dart';
 import '../widgets/restaurant_card.dart';
 import 'restaurant_details.dart';
+import 'search_screen.dart';
 
 class RestaurantListScreen extends ConsumerStatefulWidget {
   final String? initialCategory;
@@ -22,7 +23,21 @@ class RestaurantListScreen extends ConsumerStatefulWidget {
 
 class _RestaurantListScreenState extends ConsumerState<RestaurantListScreen> {
   late String selectedCategory;
+  String selectedArea = 'All Areas';
   String sortBy = 'rating'; // 'rating', 'time', 'fee'
+
+  static const List<String> bahawalpurAreas = [
+    'All Areas',
+    'Model Town',
+    'Cantt',
+    'Circular Road',
+    'Dubai Chowk',
+    'Commercial Area',
+    'Farid Gate',
+    'University Road',
+    'Satellite Town',
+    'Islamia Colony',
+  ];
 
   @override
   void initState() {
@@ -32,6 +47,13 @@ class _RestaurantListScreenState extends ConsumerState<RestaurantListScreen> {
 
   List<Restaurant> _getSortedAndFilteredRestaurants() {
     List<Restaurant> list = List<Restaurant>.from(SampleData.getRestaurantsForCategory(selectedCategory));
+
+    if (selectedArea != 'All Areas') {
+      list = list.where((r) =>
+        r.area.toLowerCase().contains(selectedArea.toLowerCase()) ||
+        r.address.toLowerCase().contains(selectedArea.toLowerCase())
+      ).toList();
+    }
 
     switch (sortBy) {
       case 'rating':
@@ -61,16 +83,28 @@ class _RestaurantListScreenState extends ConsumerState<RestaurantListScreen> {
         backgroundColor: AppColors.white,
         elevation: 0.5,
         iconTheme: const IconThemeData(color: AppColors.textDark),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search, color: AppColors.textDark),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SearchScreen()),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
           Container(
             color: AppColors.white,
-            padding: const EdgeInsets.symmetric(vertical: 10),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: Column(
               children: [
+                // 1. Food Categories
                 SizedBox(
-                  height: 38,
+                  height: 36,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -82,10 +116,10 @@ class _RestaurantListScreenState extends ConsumerState<RestaurantListScreen> {
                         onTap: () => setState(() => selectedCategory = cat),
                         child: Container(
                           margin: const EdgeInsets.only(right: 8),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                           decoration: BoxDecoration(
                             color: isSelected ? AppColors.primary : Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(18),
                             border: Border.all(
                               color: isSelected ? AppColors.primary : Colors.grey.shade300,
                             ),
@@ -95,7 +129,7 @@ class _RestaurantListScreenState extends ConsumerState<RestaurantListScreen> {
                             style: TextStyle(
                               color: isSelected ? Colors.white : AppColors.textDark,
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                              fontSize: 13,
+                              fontSize: 12,
                             ),
                           ),
                         ),
@@ -103,15 +137,63 @@ class _RestaurantListScreenState extends ConsumerState<RestaurantListScreen> {
                     },
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
+
+                // 2. Bahawalpur Areas
+                SizedBox(
+                  height: 32,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: bahawalpurAreas.length,
+                    itemBuilder: (context, index) {
+                      final area = bahawalpurAreas[index];
+                      final isSelected = selectedArea == area;
+                      return GestureDetector(
+                        onTap: () => setState(() => selectedArea = area),
+                        child: Container(
+                          margin: const EdgeInsets.only(right: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: isSelected ? Colors.teal.shade700 : Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isSelected ? Colors.teal.shade700 : Colors.grey.shade300,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (area != 'All Areas') ...[
+                                Icon(Icons.place_outlined, size: 12, color: isSelected ? Colors.white : Colors.grey.shade600),
+                                const SizedBox(width: 3),
+                              ],
+                              Text(
+                                area,
+                                style: TextStyle(
+                                  color: isSelected ? Colors.white : AppColors.textDark,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // 3. Count & Sorting Dropdown
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     children: [
                       Expanded(
                         child: Text(
-                          '${restaurants.length} restaurants found',
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.w500),
+                          '${restaurants.length} spots in Bahawalpur',
+                          style: TextStyle(color: Colors.grey.shade700, fontSize: 13, fontWeight: FontWeight.w600),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -127,9 +209,9 @@ class _RestaurantListScreenState extends ConsumerState<RestaurantListScreen> {
                             isDense: true,
                             style: const TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.bold),
                             items: const [
-                              DropdownMenuItem(value: 'rating', child: Text('Top Rated')),
-                              DropdownMenuItem(value: 'time', child: Text('Nearest')),
-                              DropdownMenuItem(value: 'fee', child: Text('Lowest Fee')),
+                              DropdownMenuItem(value: 'rating', child: Text('Top Rated ★')),
+                              DropdownMenuItem(value: 'time', child: Text('Nearest Distance')),
+                              DropdownMenuItem(value: 'fee', child: Text('Lowest Delivery Fee')),
                             ],
                             onChanged: (val) {
                               if (val != null) {
@@ -156,13 +238,13 @@ class _RestaurantListScreenState extends ConsumerState<RestaurantListScreen> {
                           Icon(Icons.restaurant_outlined, size: 64, color: Colors.grey.shade400),
                           const SizedBox(height: 16),
                           Text(
-                            'No restaurants found for "$selectedCategory"',
+                            'No restaurants found in $selectedArea for "$selectedCategory"',
                             style: AppStyles.subtitle,
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Try selecting "All" or browse another category.',
+                            'Try clearing the locality or category filter to discover all spots.',
                             style: AppStyles.body,
                             textAlign: TextAlign.center,
                           ),
@@ -172,8 +254,11 @@ class _RestaurantListScreenState extends ConsumerState<RestaurantListScreen> {
                               backgroundColor: AppColors.primary,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
-                            onPressed: () => setState(() => selectedCategory = 'All'),
-                            child: const Text('Show All Restaurants', style: TextStyle(color: Colors.white)),
+                            onPressed: () => setState(() {
+                              selectedCategory = 'All';
+                              selectedArea = 'All Areas';
+                            }),
+                            child: const Text('Reset All Filters', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),

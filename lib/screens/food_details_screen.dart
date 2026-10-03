@@ -86,6 +86,29 @@ class _FoodDetailsScreenState extends ConsumerState<FoodDetailsScreen> {
         backgroundColor: AppColors.white,
         elevation: 0.5,
         iconTheme: const IconThemeData(color: AppColors.textDark),
+        actions: [
+          Consumer(
+            builder: (context, ref, _) {
+              final isFav = ref.watch(favoritesProvider).contains(food.id);
+              return IconButton(
+                icon: Icon(
+                  isFav ? Icons.favorite : Icons.favorite_border,
+                  color: isFav ? Colors.red : AppColors.textDark,
+                ),
+                onPressed: () {
+                  ref.read(favoritesProvider.notifier).toggleFavorite(food.id);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(isFav ? 'Removed ${food.name} from favorites' : 'Added ${food.name} to favorites!'),
+                      duration: const Duration(seconds: 1),
+                      backgroundColor: AppColors.primary,
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
@@ -337,9 +360,11 @@ class _FoodDetailsScreenState extends ConsumerState<FoodDetailsScreen> {
               ),
               onPressed: () {
                 final cartNotifier = ref.read(cartProvider.notifier);
+                final notes = _notesController.text.trim();
                 final customs = [
                   if (showSpiceOptions) 'Spice: $selectedSpiceLevel',
                   ...selectedAddons,
+                  if (notes.isNotEmpty) 'Note: $notes',
                 ];
                 final item = CartItem(
                   food: widget.food,

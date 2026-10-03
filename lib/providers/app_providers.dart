@@ -134,6 +134,16 @@ class NotificationsNotifier extends Notifier<List<AppNotification>> {
     _save();
   }
 
+  void markAllAsRead() {
+    state = state.map((n) => AppNotification(id: n.id, title: n.title, message: n.message, date: n.date, isRead: true)).toList();
+    _save();
+  }
+
+  void clearAll() {
+    state = [];
+    _save();
+  }
+
   void _save() {
     ref.read(storageServiceProvider).setStringList('notifications', state.map((e) => jsonEncode(e.toJson())).toList());
   }
@@ -161,14 +171,86 @@ class FavoritesNotifier extends Notifier<List<String>> {
 final favoritesProvider = NotifierProvider<FavoritesNotifier, List<String>>(() => FavoritesNotifier());
 
 class AddressesNotifier extends Notifier<List<Address>> {
+  static final List<Address> defaultAddresses = [
+    Address(
+      id: 'addr_home',
+      label: 'Home',
+      addressLine: 'House 14, Street 3, Model Town A, Bahawalpur',
+      contactNumber: '+92 300 1234567',
+      instructions: 'Ring doorbell twice. Leave on porch if unavailable.',
+      isDefault: true,
+    ),
+    Address(
+      id: 'addr_work',
+      label: 'Office / Work',
+      addressLine: 'Commercial Plaza, Aziz Bhatti Shaheed Road, Cantt, Bahawalpur',
+      contactNumber: '+92 300 1234567',
+      instructions: 'Deliver to 2nd floor reception.',
+      isDefault: false,
+    ),
+    Address(
+      id: 'addr_campus',
+      label: 'University Campus',
+      addressLine: 'Hostel 3, IUB Baghdad-ul-Jadeed Campus, University Road, Bahawalpur',
+      contactNumber: '+92 300 1234567',
+      instructions: 'Call upon arrival at the main security gate.',
+      isDefault: false,
+    ),
+  ];
+
   @override
   List<Address> build() {
     final strList = ref.watch(storageServiceProvider).getStringList('addresses');
+    if (strList.isEmpty) {
+      return defaultAddresses;
+    }
     return strList.map((e) => Address.fromJson(jsonDecode(e))).toList();
   }
 
   void addAddress(Address addr) {
-    state = [...state.map((a) => addr.isDefault ? Address(id: a.id, label: a.label, addressLine: a.addressLine, contactNumber: a.contactNumber, instructions: a.instructions, isDefault: false) : a), addr];
+    state = [
+      ...state.map((a) => addr.isDefault
+          ? Address(
+              id: a.id,
+              label: a.label,
+              addressLine: a.addressLine,
+              contactNumber: a.contactNumber,
+              instructions: a.instructions,
+              isDefault: false)
+          : a),
+      addr
+    ];
+    _save();
+  }
+
+  void removeAddress(String id) {
+    state = state.where((a) => a.id != id).toList();
+    if (state.isNotEmpty && !state.any((a) => a.isDefault)) {
+      final first = state.first;
+      state = [
+        Address(
+          id: first.id,
+          label: first.label,
+          addressLine: first.addressLine,
+          contactNumber: first.contactNumber,
+          instructions: first.instructions,
+          isDefault: true,
+        ),
+        ...state.sublist(1),
+      ];
+    }
+    _save();
+  }
+
+  void setDefault(String id) {
+    state = state.map((a) => Address(
+      id: a.id,
+      label: a.label,
+      addressLine: a.addressLine,
+      contactNumber: a.contactNumber,
+      instructions: a.instructions,
+      isDefault: a.id == id,
+    )).toList();
     _save();
   }
 
@@ -178,20 +260,35 @@ class AddressesNotifier extends Notifier<List<Address>> {
 }
 final addressesProvider = NotifierProvider<AddressesNotifier, List<Address>>(() => AddressesNotifier());
 
-class SettingsNotifier extends Notifier<Map<String, bool>> {
+class SettingsNotifier extends Notifier<Map<String, dynamic>> {
   @override
-  Map<String, bool> build() {
+  Map<String, dynamic> build() {
     final storage = ref.watch(storageServiceProvider);
     return {
       'notifications': storage.getBool('notifications', defaultValue: true),
       'darkMode': storage.getBool('darkMode', defaultValue: false),
+      'language': storage.getString('language') ?? 'English',
+      'preferredArea': storage.getString('preferredArea') ?? 'Model Town, Bahawalpur',
     };
   }
 
   void toggleSetting(String key) {
-    final val = !(state[key] ?? false);
+    final val = !(state[key] as bool? ?? false);
     state = {...state, key: val};
     ref.read(storageServiceProvider).setBool(key, val);
   }
+
+  void setString(String key, String value) {
+    state = {...state, key: value};
+    ref.read(storageServiceProvider).setString(key, value);
+  }
+
+  void setPreferredArea(String area) {
+    setString('preferredArea', area);
+  }
+
+  void setLanguage(String lang) {
+    setString('language', lang);
+  }
 }
-final settingsProvider = NotifierProvider<SettingsNotifier, Map<String, bool>>(() => SettingsNotifier());
+final settingsProvider = NotifierProvider<SettingsNotifier, Map<String, dynamic>>(() => SettingsNotifier());

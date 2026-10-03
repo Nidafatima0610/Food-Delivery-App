@@ -12,7 +12,7 @@ class CartItem {
   });
   
   double get totalPrice =>
-      (food.price + (customizations.where((c) => !c.startsWith('Spice:')).length * 50.0)) * quantity;
+      (food.price + (customizations.where((c) => !c.startsWith('Spice:') && !c.startsWith('Note:')).length * 50.0)) * quantity;
 
   Map<String, dynamic> toJson() => {
     'food': food.toJson(),

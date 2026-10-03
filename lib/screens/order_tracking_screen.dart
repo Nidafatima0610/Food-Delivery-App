@@ -74,18 +74,12 @@ class OrderTrackingScreen extends ConsumerWidget {
       SnackBar(
         content: Text('Items from ${order.restaurantName} added to cart!'),
         backgroundColor: AppColors.primary,
-        duration: const Duration(seconds: 3),
-        action: SnackBarAction(
-          label: 'View Cart',
-          textColor: Colors.white,
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CartScreen()),
-            );
-          },
-        ),
+        duration: const Duration(seconds: 2),
       ),
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CartScreen()),
     );
   }
 

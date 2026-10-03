@@ -9,14 +9,35 @@ class AuthNotifier extends Notifier<UserModel?> {
     final storage = ref.watch(storageServiceProvider);
     final userJson = storage.getString('current_user');
     if (userJson != null) return UserModel.fromJson(jsonDecode(userJson));
-    return null;
+    return UserModel(
+      id: 'u1',
+      name: 'Umair Raza',
+      email: 'umair.bahawalpur@gmail.com',
+      phone: '+92 300 8654321',
+    );
   }
 
   Future<void> login(String email, String password) async {
-    // Mock authentication
-    final user = UserModel(id: 'u1', name: 'John Doe', email: email, phone: '+1234567890');
+    final user = UserModel(
+      id: 'u1',
+      name: 'Umair Raza',
+      email: email,
+      phone: '+92 300 8654321',
+    );
     state = user;
     await ref.read(storageServiceProvider).setString('current_user', jsonEncode(user.toJson()));
+  }
+
+  Future<void> updateProfile(String name, String phone) async {
+    final current = state;
+    final updated = UserModel(
+      id: current?.id ?? 'u1',
+      name: name,
+      email: current?.email ?? 'umair.bahawalpur@gmail.com',
+      phone: phone,
+    );
+    state = updated;
+    await ref.read(storageServiceProvider).setString('current_user', jsonEncode(updated.toJson()));
   }
 
   Future<void> logout() async {
