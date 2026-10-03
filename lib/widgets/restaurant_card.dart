@@ -134,7 +134,7 @@ class RestaurantCard extends ConsumerWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '${restaurant.cuisine} • ${restaurant.address}',
+                      '${restaurant.cuisine} • Near ${restaurant.area} • ${restaurant.distance.toStringAsFixed(1)} km away',
                       style: AppStyles.body.copyWith(fontSize: 13),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -185,7 +185,10 @@ class RestaurantCard extends ConsumerWidget {
     String? label;
     Color color = AppColors.primary;
 
-    if (restaurant.rating >= 4.8) {
+    if (restaurant.offer != null) {
+      label = restaurant.offer;
+      color = const Color(0xFFE11D48);
+    } else if (restaurant.rating >= 4.8) {
       label = '★ Top Rated';
       color = const Color(0xFFD97706);
     } else if (restaurant.deliveryFee == 0) {
@@ -194,10 +197,7 @@ class RestaurantCard extends ConsumerWidget {
     } else if (restaurant.deliveryTime.contains('15') || restaurant.deliveryTime.contains('20')) {
       label = '⚡ Fast Delivery';
       color = const Color(0xFF2563EB);
-    } else if (restaurant.id == 'r1' || restaurant.id == 'r5') {
-      label = '20% OFF';
-      color = const Color(0xFFE11D48);
-    } else if (restaurant.featured) {
+    } else if (restaurant.featured || restaurant.isPopular) {
       label = 'Popular';
       color = AppColors.primary;
     }
@@ -323,7 +323,7 @@ class RestaurantHorizontalCard extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${restaurant.cuisine} • ${restaurant.deliveryTime}',
+                      '${restaurant.cuisine} • Near ${restaurant.area}',
                       style: const TextStyle(fontSize: 12, color: AppColors.textLight),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

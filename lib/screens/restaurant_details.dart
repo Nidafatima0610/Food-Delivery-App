@@ -158,9 +158,19 @@ class _RestaurantDetailsScreenState extends ConsumerState<RestaurantDetailsScree
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: Text(
-                          restaurant.name,
-                          style: AppStyles.title.copyWith(fontSize: 22),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              restaurant.name,
+                              style: AppStyles.title.copyWith(fontSize: 22),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              '${restaurant.cuisine} • Near ${restaurant.area}',
+                              style: const TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.bold),
+                            ),
+                          ],
                         ),
                       ),
                       Container(
@@ -183,12 +193,12 @@ class _RestaurantDetailsScreenState extends ConsumerState<RestaurantDetailsScree
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Text(
                     restaurant.description,
                     style: AppStyles.body.copyWith(fontSize: 13, height: 1.4),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       const Icon(Icons.location_on_outlined, size: 16, color: AppColors.primary),
@@ -203,6 +213,33 @@ class _RestaurantDetailsScreenState extends ConsumerState<RestaurantDetailsScree
                       ),
                     ],
                   ),
+                  if (restaurant.offer != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF1F2),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFFFCCD3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.local_offer, color: Color(0xFFE11D48), size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Special Deal: ${restaurant.offer} on this restaurant!',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFBE123C),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 14),
                   const Divider(height: 1),
                   const SizedBox(height: 14),

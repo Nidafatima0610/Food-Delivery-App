@@ -6,6 +6,7 @@ import '../providers/app_providers.dart';
 import '../widgets/app_image.dart';
 import 'checkout_screen.dart';
 import 'restaurant_details.dart';
+import 'restaurant_list_screen.dart';
 
 class CartScreen extends ConsumerWidget {
   const CartScreen({super.key});
@@ -99,7 +100,12 @@ class CartScreen extends ConsumerWidget {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: () {
-                        Navigator.popUntil(context, (route) => route.isFirst);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RestaurantListScreen(title: 'All Restaurants'),
+                          ),
+                        );
                       },
                       child: const Text(
                         'Browse Restaurants',

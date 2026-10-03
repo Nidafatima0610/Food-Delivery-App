@@ -35,69 +35,31 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final code = _couponController.text.trim().toUpperCase();
     if (code.isEmpty) return;
 
-    if (code == 'WELCOME10') {
-      if (subtotal < 500) {
+    final matched = SampleData.coupons.where((c) => c.code.toUpperCase() == code).toList();
+    if (matched.isNotEmpty) {
+      final coupon = matched.first;
+      if (subtotal < coupon.minOrderAmount) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Minimum order of Rs. 500 required for WELCOME10.')),
+          SnackBar(content: Text('Minimum order of ${AppFormatters.currency(coupon.minOrderAmount)} required for ${coupon.code}.')),
         );
         return;
       }
       setState(() {
-        discountPercentage = 10.0;
-        flatDiscount = 0.0;
-        appliedCouponCode = code;
+        if (coupon.isPercentage) {
+          discountPercentage = coupon.discountValue;
+          flatDiscount = 0.0;
+        } else {
+          discountPercentage = 0.0;
+          flatDiscount = coupon.code == 'FREESHIP' ? currentDeliveryFee : coupon.discountValue;
+        }
+        appliedCouponCode = coupon.code;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Coupon WELCOME10 applied! 10% discount added.')),
-      );
-    } else if (code == 'FEAST20') {
-      if (subtotal < 1000) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Minimum order of Rs. 1,000 required for FEAST20.')),
-        );
-        return;
-      }
-      setState(() {
-        discountPercentage = 20.0;
-        flatDiscount = 0.0;
-        appliedCouponCode = code;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Coupon FEAST20 applied! 20% discount added.')),
-      );
-    } else if (code == 'BIRYANI15') {
-      if (subtotal < 600) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Minimum order of Rs. 600 required for BIRYANI15.')),
-        );
-        return;
-      }
-      setState(() {
-        discountPercentage = 15.0;
-        flatDiscount = 0.0;
-        appliedCouponCode = code;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Coupon BIRYANI15 applied! 15% discount added.')),
-      );
-    } else if (code == 'FREESHIP') {
-      if (subtotal < 600) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Minimum order of Rs. 600 required for FREESHIP.')),
-        );
-        return;
-      }
-      setState(() {
-        discountPercentage = 0.0;
-        flatDiscount = currentDeliveryFee;
-        appliedCouponCode = code;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Coupon FREESHIP applied! Free delivery discount added.')),
+        SnackBar(content: Text('Coupon ${coupon.code} applied successfully!'), backgroundColor: AppColors.primary),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid coupon code. Try WELCOME10, FEAST20, or BIRYANI15.')),
+        const SnackBar(content: Text('Invalid coupon code. Try WELCOME10, FEAST20, FREESHIP or BIRYANI15.')),
       );
     }
   }
@@ -210,10 +172,16 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('Order Items', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 8),
                   if (restaurant != null)
-                    Text(
-                      restaurant.name,
-                      style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13),
+                    Expanded(
+                      child: Text(
+                        restaurant.name,
+                        textAlign: TextAlign.end,
+                        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                 ],
               ),
@@ -453,6 +421,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       id: const Uuid().v4(),
                       restaurantId: restaurantId,
                       restaurantName: restaurantName,
+                      restaurantImage: resObj?.image,
                       items: cartItems,
                       subtotal: subtotal,
                       deliveryFee: deliveryFee,
@@ -460,6 +429,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       total: total,
                       date: DateTime.now(),
                       status: OrderStatus.placed,
+                      deliveryAddress: deliveryAddress,
+                      paymentMethod: paymentMethod,
                     );
 
                     ref.read(ordersProvider.notifier).addOrder(order);

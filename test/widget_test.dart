@@ -88,28 +88,19 @@ void main() {
   HttpOverrides.global = _MockHttpOverrides();
 
   group('Catalog & Data Integrity Tests', () {
-    test('Catalog contains exactly 15 realistic restaurants', () {
-      expect(SampleData.restaurants.length, 15);
+    test('Catalog contains exactly 25 realistic restaurants', () {
+      expect(SampleData.restaurants.length, 25);
       final names = SampleData.restaurants.map((r) => r.name).toList();
-      expect(names.contains('Spice Route'), isTrue);
-      expect(names.contains('Karachi Grill'), isTrue);
-      expect(names.contains('Urban Bites'), isTrue);
-      expect(names.contains('Burger District'), isTrue);
-      expect(names.contains('The Pizza House'), isTrue);
-      expect(names.contains('Royal BBQ'), isTrue);
-      expect(names.contains('Desi Kitchen'), isTrue);
-      expect(names.contains('China Bowl'), isTrue);
-      expect(names.contains('Sweet Cravings'), isTrue);
-      expect(names.contains('Street Food Co.'), isTrue);
-      expect(names.contains('Green Garden'), isTrue);
-      expect(names.contains('Coffee & Co.'), isTrue);
-      expect(names.contains('Food Junction'), isTrue);
-      expect(names.contains('Lahore Tikka'), isTrue);
-      expect(names.contains('Daily Dine'), isTrue);
+      expect(names.contains('Al-Noor Dum Biryani & Pulao'), isTrue);
+      expect(names.contains('Sultani BBQ & Charcoal Grill'), isTrue);
+      expect(names.contains('Grill Town Smashed Burgers'), isTrue);
+      expect(names.contains('The Pizza Crust Studio'), isTrue);
+      expect(names.contains('Al-Madina Shawarma & Broast'), isTrue);
+      expect(names.contains('Golden Dragon Chinese Bowl'), isTrue);
     });
 
-    test('Catalog contains roughly 120+ food items and every food has a valid restaurantId', () {
-      expect(SampleData.foods.length, greaterThanOrEqualTo(120));
+    test('Catalog contains 100+ food items and every food has a valid restaurantId', () {
+      expect(SampleData.foods.length, greaterThanOrEqualTo(100));
       final restaurantIds = SampleData.restaurants.map((r) => r.id).toSet();
 
       for (final food in SampleData.foods) {
@@ -124,12 +115,12 @@ void main() {
       }
     });
 
-    test('Each restaurant has between 8 and 12 food items', () {
+    test('Each restaurant has between 3 and 8 food items', () {
       for (final restaurant in SampleData.restaurants) {
         final restaurantFoods = SampleData.foods.where((f) => f.restaurantId == restaurant.id).toList();
         expect(
           restaurantFoods.length,
-          inInclusiveRange(8, 12),
+          inInclusiveRange(3, 8),
           reason: 'Restaurant ${restaurant.name} has ${restaurantFoods.length} items',
         );
       }
@@ -189,7 +180,7 @@ void main() {
 
       // Location header
       expect(find.text('DELIVER TO'), findsOneWidget);
-      expect(find.textContaining('123 Main St'), findsOneWidget);
+      expect(find.text('Home, Model Town A, Bahawalpur'), findsOneWidget);
 
       // Search bar
       expect(find.byIcon(Icons.search), findsOneWidget);
@@ -197,14 +188,12 @@ void main() {
       // Categories
       expect(find.text('Categories'), findsOneWidget);
       expect(find.text('All'), findsOneWidget);
-      expect(find.text('Pizza'), findsOneWidget);
-      expect(find.text('Burgers'), findsOneWidget);
-      expect(find.text('Pakistani'), findsOneWidget);
+      expect(find.text('Biryani'), findsOneWidget);
+      expect(find.text('BBQ'), findsOneWidget);
 
       // Sections
-      expect(find.text('Popular Restaurants'), findsOneWidget);
+      expect(find.text('Popular Near You'), findsOneWidget);
       expect(find.text('Popular Dishes'), findsOneWidget);
-      expect(find.text('Nearby Restaurants'), findsOneWidget);
     });
 
     testWidgets('Tapping category on HomeScreen filters spots correctly', (tester) async {
@@ -212,12 +201,12 @@ void main() {
       await tester.pumpWidget(createTestApp(const HomeScreen()));
       await tester.pumpAndSettle();
 
-      final chip = find.text('Pizza');
+      final chip = find.text('Biryani');
       expect(chip, findsOneWidget);
       await tester.tap(chip);
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Pizza Spots'), findsOneWidget);
+      expect(find.textContaining('Biryani Spots'), findsOneWidget);
     });
 
     testWidgets('RestaurantListScreen displays all restaurants and supports sorting', (tester) async {
@@ -226,8 +215,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('All Restaurants'), findsOneWidget);
-      expect(find.text('15 restaurants found'), findsOneWidget);
-      expect(find.text('Burger District'), findsOneWidget);
+      expect(find.text('25 restaurants found'), findsOneWidget);
+      expect(find.text('Sultani BBQ & Charcoal Grill'), findsOneWidget);
     });
 
     testWidgets('RestaurantDetailsScreen renders restaurant info and its full menu', (tester) async {
@@ -236,11 +225,11 @@ void main() {
       await tester.pumpWidget(createTestApp(RestaurantDetailsScreen(restaurant: restaurant)));
       await tester.pumpAndSettle();
 
-      expect(find.text('Spice Route'), findsWidgets);
+      expect(find.text('Al-Noor Dum Biryani & Pulao'), findsWidgets);
       expect(find.text('OPEN NOW'), findsOneWidget);
       expect(find.text('Menu Categories'), findsOneWidget);
-      expect(find.text('Chicken Biryani'), findsOneWidget);
-      expect(find.text('Chicken Karahi'), findsOneWidget);
+      expect(find.text('Special Chicken Dum Biryani'), findsOneWidget);
+      expect(find.text('Beef Yakhni Pulao'), findsOneWidget);
     });
 
     testWidgets('FoodDetailsScreen renders details, add-ons, quantity selector and button', (tester) async {
@@ -249,17 +238,17 @@ void main() {
       await tester.pumpWidget(createTestApp(FoodDetailsScreen(food: food)));
       await tester.pumpAndSettle();
 
-      expect(find.text('Chicken Biryani'), findsWidgets);
-      expect(find.text('Spice Route'), findsOneWidget);
+      expect(find.text('Special Chicken Dum Biryani'), findsWidgets);
+      expect(find.text('Al-Noor Dum Biryani & Pulao'), findsOneWidget);
       expect(find.text('Customizations & Add-ons'), findsOneWidget);
       expect(find.text('Special Instructions'), findsOneWidget);
-      expect(find.text('Add to Cart • Rs. 450'), findsOneWidget);
+      expect(find.text('Add to Cart • Rs. 480'), findsOneWidget);
 
       // Increase quantity
       await tester.ensureVisible(find.byIcon(Icons.add_circle));
       await tester.tap(find.byIcon(Icons.add_circle));
       await tester.pumpAndSettle();
-      expect(find.text('Add to Cart • Rs. 900'), findsOneWidget);
+      expect(find.text('Add to Cart • Rs. 960'), findsOneWidget);
     });
 
     testWidgets('SearchScreen searches both restaurants and food items accurately', (tester) async {
@@ -277,7 +266,7 @@ void main() {
       // Results must show both restaurants and dishes
       expect(find.textContaining('Restaurants'), findsWidgets);
       expect(find.textContaining('Dishes'), findsWidgets);
-      expect(find.text('Chicken Biryani'), findsWidgets);
+      expect(find.text('Special Chicken Dum Biryani'), findsWidgets);
     });
 
     testWidgets('CartScreen displays items, calculations, and checkout navigation', (tester) async {
@@ -302,8 +291,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('My Cart'), findsOneWidget);
-      expect(find.text('Spice Route'), findsOneWidget);
-      expect(find.text('Chicken Biryani'), findsOneWidget);
+      expect(find.text('Al-Noor Dum Biryani & Pulao'), findsOneWidget);
+      expect(find.text('Special Chicken Dum Biryani'), findsOneWidget);
       expect(find.textContaining('Checkout • Rs.'), findsOneWidget);
     });
 
@@ -331,9 +320,9 @@ void main() {
       expect(find.text('Checkout'), findsOneWidget);
       expect(find.text('Delivery Address'), findsOneWidget);
       expect(find.text('2x'), findsOneWidget);
-      expect(find.text('Chicken Biryani'), findsOneWidget);
+      expect(find.text('Special Chicken Dum Biryani'), findsOneWidget);
       expect(find.text('Payment Method'), findsOneWidget);
-      expect(find.text('Place Order • Rs. 999'), findsOneWidget);
+      expect(find.text('Place Order • Rs. 1,030'), findsOneWidget);
     });
 
     testWidgets('OrdersScreen renders order history with restaurant name, status and items', (tester) async {
@@ -347,14 +336,14 @@ void main() {
       final dummyOrder = OrderModel(
         id: 'ord-12345678',
         restaurantId: 'r1',
-        restaurantName: 'Spice Route',
+        restaurantName: 'Al-Noor Dum Biryani & Pulao',
         items: [
           CartItem(food: SampleData.foods.first, quantity: 2),
         ],
-        subtotal: 900.0,
-        deliveryFee: 99.0,
+        subtotal: 960.0,
+        deliveryFee: 70.0,
         discount: 0.0,
-        total: 999.0,
+        total: 1030.0,
         date: DateTime.now(),
         status: OrderStatus.placed,
       );
@@ -371,11 +360,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Spice Route'), findsOneWidget);
+      expect(find.text('Al-Noor Dum Biryani & Pulao'), findsOneWidget);
       expect(find.text('Order Placed'), findsOneWidget);
-      expect(find.text('2x Chicken Biryani'), findsOneWidget);
-      expect(find.text('Rs. 999'), findsOneWidget);
-      expect(find.text('Track'), findsOneWidget);
+      expect(find.textContaining('Special Chicken Dum Biryani'), findsOneWidget);
+      expect(find.text('Rs. 1,030'), findsOneWidget);
+      expect(find.text('Details'), findsOneWidget);
       expect(find.text('Reorder'), findsOneWidget);
     });
 
@@ -400,7 +389,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('My Favorites'), findsOneWidget);
-      expect(find.text('Spice Route'), findsOneWidget);
+      expect(find.text('Al-Noor Dum Biryani & Pulao'), findsOneWidget);
     });
   });
 }

@@ -1,13 +1,76 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/constants.dart';
 import '../core/sample_data.dart';
+import '../providers/app_providers.dart';
+import 'checkout_screen.dart';
+import 'restaurant_list_screen.dart';
 
-class OffersScreen extends StatelessWidget {
+class OffersScreen extends ConsumerWidget {
   const OffersScreen({super.key});
 
+  void _copyCode(BuildContext context, String code) {
+    Clipboard.setData(ClipboardData(text: code));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(child: Text('Promo code "$code" copied to clipboard!')),
+          ],
+        ),
+        backgroundColor: AppColors.primary,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _applyCouponAction(BuildContext context, WidgetRef ref, String code) {
+    final cart = ref.read(cartProvider);
+    if (cart.items.isNotEmpty) {
+      _copyCode(context, code);
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const CheckoutScreen()),
+      );
+    } else {
+      _copyCode(context, code);
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('Code "$code" Copied!'),
+          content: const Text(
+            'Your cart is currently empty. Would you like to explore top restaurants to use this deal?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Later'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RestaurantListScreen(title: 'All Restaurants')),
+                );
+              },
+              child: const Text('Browse Food', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final coupons = SampleData.coupons;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Offers & Deals', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
@@ -17,118 +80,155 @@ class OffersScreen extends StatelessWidget {
       ),
       backgroundColor: AppColors.background,
       body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: SampleData.coupons.length,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        itemCount: coupons.length,
         itemBuilder: (context, index) {
-          final coupon = SampleData.coupons[index];
-          final discountText = coupon.isPercentage
-              ? '${coupon.discountValue.toInt()}% OFF on entire order'
-              : '${AppFormatters.currency(coupon.discountValue)} FLAT OFF';
+          final coupon = coupons[index];
+          final discountBadge = coupon.isPercentage
+              ? '${coupon.discountValue.toInt()}% OFF'
+              : 'FLAT ${AppFormatters.currency(coupon.discountValue)} OFF';
 
           return Container(
-            margin: const EdgeInsets.only(bottom: 14),
+            margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
               color: AppColors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () {
-                  Clipboard.setData(ClipboardData(text: coupon.code));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Row(
-                        children: [
-                          const Icon(Icons.check_circle, color: Colors.white, size: 20),
-                          const SizedBox(width: 10),
-                          Text('Code ${coupon.code} copied! Apply at checkout.'),
-                        ],
-                      ),
-                      backgroundColor: AppColors.primary,
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(18),
-                  child: Row(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top Row: Icon, Title & Badge (Responsive)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.local_offer, color: AppColors.primary, size: 26),
+                        child: const Icon(Icons.local_offer, color: AppColors.primary, size: 24),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.amber.shade100,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    coupon.code,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                      color: Colors.amber.shade900,
-                                      letterSpacing: 0.8,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  discountText,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
                             Text(
-                              'Min. spend: ${AppFormatters.currency(coupon.minOrderAmount)}',
+                              coupon.title.isNotEmpty ? coupon.title : discountBadge,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Min. order: ${AppFormatters.currency(coupon.minOrderAmount)}',
                               style: const TextStyle(fontSize: 12, color: AppColors.textLight),
                             ),
                           ],
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.primary),
+                          color: Colors.green.shade50,
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green.shade200),
                         ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.copy, size: 14, color: AppColors.primary),
-                            SizedBox(width: 4),
-                            Text(
-                              'Copy',
-                              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12),
-                            ),
-                          ],
+                        child: Text(
+                          discountBadge,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green.shade800,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ),
+
+                  if (coupon.description.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      coupon.description,
+                      style: TextStyle(fontSize: 13, color: Colors.grey.shade700, height: 1.35),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+
+                  const SizedBox(height: 14),
+                  const Divider(height: 1),
+                  const SizedBox(height: 12),
+
+                  // Bottom Action Bar: Code Pill & Buttons (Responsive Layout)
+                  Row(
+                    children: [
+                      // Coupon Code Pill
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.amber.shade300, style: BorderStyle.solid),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.vpn_key_outlined, size: 14, color: Colors.amber.shade900),
+                            const SizedBox(width: 6),
+                            Text(
+                              coupon.code,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: Colors.amber.shade900,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      // Copy Button
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.grey.shade700,
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        icon: const Icon(Icons.copy, size: 14),
+                        label: const Text('Copy', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        onPressed: () => _copyCode(context, coupon.code),
+                      ),
+                      const SizedBox(width: 6),
+                      // Apply Button
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        onPressed: () => _applyCouponAction(context, ref, coupon.code),
+                        child: const Text(
+                          'Apply',
+                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           );

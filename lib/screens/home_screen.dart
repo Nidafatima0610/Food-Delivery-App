@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/constants.dart';
 import '../core/sample_data.dart';
-import '../models/restaurant.dart';
 import '../models/food_item.dart';
 import '../models/cart_item.dart';
 import '../providers/app_providers.dart';
@@ -25,7 +24,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   String selectedCategory = 'All';
-  String currentAddress = 'Home, 123 Main St, Gulberg III, Lahore';
+  String currentAddress = 'Home, Model Town A, Bahawalpur';
 
   void _showAddressSelector() {
     showModalBottomSheet(
@@ -53,19 +52,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 12),
               _buildAddressTile(
                 'Home',
-                '123 Main St, Gulberg III, Lahore',
+                'House 14, Model Town A, Bahawalpur',
                 Icons.home_outlined,
               ),
               const Divider(height: 1),
               _buildAddressTile(
                 'Work / Office',
-                'Software Technology Park, F-7/2, Islamabad',
+                'Commercial Area, Cantt, Bahawalpur',
                 Icons.work_outline,
               ),
               const Divider(height: 1),
               _buildAddressTile(
+                'University / Campus',
+                'IUB Baghdad-ul-Jadeed Campus, University Road, Bahawalpur',
+                Icons.school_outlined,
+              ),
+              const Divider(height: 1),
+              _buildAddressTile(
                 'Family / Friends',
-                'House 18, Block 5, Clifton, Karachi',
+                'Circular Road, Near Stadium, Bahawalpur',
                 Icons.people_outline,
               ),
               const SizedBox(height: 16),
@@ -89,7 +94,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Icon(icon, color: isSelected ? AppColors.primary : Colors.grey.shade700),
       ),
       title: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-      subtitle: Text(address, style: const TextStyle(fontSize: 13, color: AppColors.textLight)),
+      subtitle: Text(address, style: const TextStyle(fontSize: 13, color: AppColors.textLight), maxLines: 1, overflow: TextOverflow.ellipsis),
       trailing: isSelected ? const Icon(Icons.check_circle, color: AppColors.primary) : null,
       onTap: () {
         setState(() {
@@ -97,6 +102,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         });
         Navigator.pop(context);
       },
+    );
+  }
+
+  Widget _buildCravingItem(String label, String cat) {
+    final isSelected = selectedCategory == cat;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedCategory = isSelected ? 'All' : cat;
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : Colors.grey.shade300,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isSelected ? AppColors.primary.withValues(alpha: 0.25) : Colors.black.withValues(alpha: 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : AppColors.textDark,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+            fontSize: 13,
+          ),
+        ),
+      ),
     );
   }
 
@@ -126,6 +168,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return Icons.eco_outlined;
       case 'snacks':
         return Icons.cookie_outlined;
+      case 'shawarma':
+        return Icons.kebab_dining_outlined;
+      case 'tea/coffee':
+        return Icons.coffee_outlined;
+      case 'bakery':
+        return Icons.bakery_dining_outlined;
+      case 'home kitchen':
+        return Icons.house_outlined;
       default:
         return Icons.restaurant_outlined;
     }
@@ -186,11 +236,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final categoryRestaurants = SampleData.getRestaurantsForCategory(selectedCategory);
     final categoryDishes = SampleData.getFoodsForCategory(selectedCategory);
 
-    // Section data
-    final popularRestaurants = List<Restaurant>.from(SampleData.restaurants)
-      ..sort((a, b) => b.rating.compareTo(a.rating));
-    final nearbyRestaurants = List<Restaurant>.from(SampleData.restaurants)
-      ..sort((a, b) => a.distance.compareTo(b.distance));
+    // Curated diverse section data from 25 unique restaurants
+    final popularRestaurants = SampleData.getPopularRestaurants();
+    final topRatedRestaurants = SampleData.getTopRatedRestaurants();
+    final fastDeliveryRestaurants = SampleData.getFastDeliveryRestaurants();
+    final dealRestaurants = SampleData.getDealRestaurants();
+    final recommendedRestaurants = SampleData.getRecommendedRestaurants();
     final popularDishes = SampleData.getPopularDishes();
 
     return Scaffold(
@@ -430,6 +481,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ),
                   ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // 3.5 What are you craving?
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    const Text(
+                      'What are you craving?',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (selectedCategory != 'All')
+                      GestureDetector(
+                        onTap: () => setState(() => selectedCategory = 'All'),
+                        child: const Text(
+                          'Show All',
+                          style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 40,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: [
+                    _buildCravingItem('🍔 Burgers', 'Burgers'),
+                    _buildCravingItem('🍕 Pizza', 'Pizza'),
+                    _buildCravingItem('🍗 BBQ', 'BBQ'),
+                    _buildCravingItem('🍚 Biryani', 'Biryani'),
+                    _buildCravingItem('🥤 Drinks', 'Drinks'),
+                    _buildCravingItem('🍰 Desserts', 'Desserts'),
+                    _buildCravingItem('🍲 Pakistani', 'Pakistani'),
+                    _buildCravingItem('🌯 Shawarma', 'Shawarma'),
+                    _buildCravingItem('🥢 Chinese', 'Chinese'),
+                  ],
                 ),
               ),
 
@@ -739,7 +837,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          'Popular Restaurants',
+                          'Popular Near You',
                           style: AppStyles.title.copyWith(fontSize: 18),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -785,7 +883,190 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                 const SizedBox(height: 24),
 
-                // 6. Popular Dishes
+                // 6. Top Rated Spots
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.star_rounded, color: Colors.amber, size: 22),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                'Top Rated Spots (4.7+ ★)',
+                                style: AppStyles.title.copyWith(fontSize: 18),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const RestaurantListScreen(title: 'Top Rated Spots'),
+                            ),
+                          );
+                        },
+                        child: const Text('See All', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 205,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: topRatedRestaurants.take(6).length,
+                    itemBuilder: (context, index) {
+                      final res = topRatedRestaurants[index];
+                      return RestaurantHorizontalCard(
+                        restaurant: res,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => RestaurantDetailsScreen(restaurant: res),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // 7. Fast Delivery
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.bolt, color: Colors.deepOrange, size: 20),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                'Fast Delivery (< 25 mins)',
+                                style: AppStyles.title.copyWith(fontSize: 18),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const RestaurantListScreen(title: 'Fast Delivery Spots'),
+                            ),
+                          );
+                        },
+                        child: const Text('See All', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 205,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: fastDeliveryRestaurants.take(6).length,
+                    itemBuilder: (context, index) {
+                      final res = fastDeliveryRestaurants[index];
+                      return RestaurantHorizontalCard(
+                        restaurant: res,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => RestaurantDetailsScreen(restaurant: res),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // 8. Today's Deals
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(Icons.local_offer_outlined, color: AppColors.primary, size: 20),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                "Today's Deals & Discounts",
+                                style: AppStyles.title.copyWith(fontSize: 18),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const OffersScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text('All Offers', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 205,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: dealRestaurants.take(6).length,
+                    itemBuilder: (context, index) {
+                      final res = dealRestaurants[index];
+                      return RestaurantHorizontalCard(
+                        restaurant: res,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => RestaurantDetailsScreen(restaurant: res),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // 9. Popular Dishes
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
@@ -839,54 +1120,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                 const SizedBox(height: 24),
 
-                // 7. Nearby Restaurants
+                // 10. Offers / Deals Banner
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Nearby Restaurants',
-                          style: AppStyles.title.copyWith(fontSize: 18),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const RestaurantListScreen(title: 'Nearby Restaurants'),
-                            ),
-                          );
-                        },
-                        child: const Text('See All', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    children: nearbyRestaurants.take(4).map((restaurant) => RestaurantCard(
-                      restaurant: restaurant,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => RestaurantDetailsScreen(restaurant: restaurant),
-                          ),
-                        );
-                      },
-                    )).toList(),
-                  ),
-                ),
-
-                // 8. Offers / Deals Banner
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   child: GestureDetector(
                     onTap: () {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const OffersScreen()));
@@ -915,7 +1151,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: const Text(
-                                    'LIMITED OFFER',
+                                    'COUPONS AVAILABLE',
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
@@ -925,7 +1161,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 const Text(
-                                  '20% OFF on Desi & BBQ',
+                                  'Save up to Rs. 300 on Orders',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 17,
@@ -934,7 +1170,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 const Text(
-                                  'Tap to view coupon FEAST20 and more offers',
+                                  'Use FEAST20, FLAT300, or FREESHIP coupons',
                                   style: TextStyle(color: Colors.white70, fontSize: 12),
                                 ),
                               ],
@@ -947,9 +1183,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
-                // 9. Recommended For You
+                // 11. Recommended For You
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
@@ -980,7 +1216,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
-                    children: SampleData.restaurants.skip(4).take(4).map((restaurant) => RestaurantCard(
+                    children: recommendedRestaurants.take(5).map((restaurant) => RestaurantCard(
                       restaurant: restaurant,
                       onTap: () {
                         Navigator.push(
@@ -991,6 +1227,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         );
                       },
                     )).toList(),
+                  ),
+                ),
+
+                // 12. Bottom Full Catalog CTA Button
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 2,
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RestaurantListScreen(title: 'All Restaurants'),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.restaurant_menu, color: Colors.white),
+                      label: Text(
+                        'Browse All ${SampleData.restaurants.length} Restaurants',
+                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ),
                 ),
               ],
