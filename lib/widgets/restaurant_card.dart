@@ -50,35 +50,17 @@ class RestaurantCard extends ConsumerWidget {
                     category: restaurant.cuisine,
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                   ),
-                  if (restaurant.deliveryFee == 0 || restaurant.featured)
-                    Positioned(
-                      top: 12,
-                      left: 12,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: restaurant.deliveryFee == 0
-                              ? const Color(0xFF2E7D32)
-                              : AppColors.primary,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 4,
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          restaurant.deliveryFee == 0 ? 'FREE DELIVERY' : 'POPULAR',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ),
+                  Builder(builder: (context) {
+                    final badge = _buildSmartBadge(restaurant);
+                    if (badge != null) {
+                      return Positioned(
+                        top: 12,
+                        left: 12,
+                        child: badge,
+                      );
+                    }
+                    return const SizedBox();
+                  }),
                   Positioned(
                     top: 8,
                     right: 8,
@@ -170,7 +152,7 @@ class RestaurantCard extends ConsumerWidget {
                         Icon(Icons.delivery_dining, size: 17, color: Colors.grey.shade600),
                         const SizedBox(width: 4),
                         Text(
-                          restaurant.deliveryFee == 0 ? 'Free' : '\$${restaurant.deliveryFee.toStringAsFixed(2)}',
+                          restaurant.deliveryFee == 0 ? 'Free' : AppFormatters.currency(restaurant.deliveryFee),
                           style: TextStyle(
                             fontSize: 12,
                             color: restaurant.deliveryFee == 0 ? Colors.green.shade700 : Colors.grey.shade700,
@@ -194,6 +176,53 @@ class RestaurantCard extends ConsumerWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  static Widget? _buildSmartBadge(Restaurant restaurant) {
+    String? label;
+    Color color = AppColors.primary;
+
+    if (restaurant.rating >= 4.8) {
+      label = '★ Top Rated';
+      color = const Color(0xFFD97706);
+    } else if (restaurant.deliveryFee == 0) {
+      label = 'Free Delivery';
+      color = const Color(0xFF16A34A);
+    } else if (restaurant.deliveryTime.contains('15') || restaurant.deliveryTime.contains('20')) {
+      label = '⚡ Fast Delivery';
+      color = const Color(0xFF2563EB);
+    } else if (restaurant.id == 'r1' || restaurant.id == 'r5') {
+      label = '20% OFF';
+      color = const Color(0xFFE11D48);
+    } else if (restaurant.featured) {
+      label = 'Popular';
+      color = AppColors.primary;
+    }
+
+    if (label == null) return null;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.4,
         ),
       ),
     );
@@ -246,6 +275,17 @@ class RestaurantHorizontalCard extends ConsumerWidget {
                     category: restaurant.cuisine,
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
                   ),
+                  Builder(builder: (context) {
+                    final badge = RestaurantCard._buildSmartBadge(restaurant);
+                    if (badge != null) {
+                      return Positioned(
+                        top: 6,
+                        left: 6,
+                        child: badge,
+                      );
+                    }
+                    return const SizedBox();
+                  }),
                   Positioned(
                     top: 6,
                     right: 6,
@@ -299,7 +339,7 @@ class RestaurantHorizontalCard extends ConsumerWidget {
                         ),
                         const Spacer(),
                         Text(
-                          restaurant.deliveryFee == 0 ? 'Free Delivery' : '\$${restaurant.deliveryFee.toStringAsFixed(2)} fee',
+                          restaurant.deliveryFee == 0 ? 'Free Delivery' : '${AppFormatters.currency(restaurant.deliveryFee)} fee',
                           style: TextStyle(
                             fontSize: 11,
                             color: restaurant.deliveryFee == 0 ? Colors.green.shade700 : AppColors.textLight,

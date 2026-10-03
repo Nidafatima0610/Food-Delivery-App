@@ -97,7 +97,7 @@ class FoodCard extends StatelessWidget {
                           Row(
                             children: [
                               Text(
-                                '\$${food.price.toStringAsFixed(2)}',
+                                AppFormatters.currency(food.price),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
@@ -181,7 +181,7 @@ class FoodHorizontalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 170,
+      width: 175,
       margin: const EdgeInsets.only(right: 14),
       decoration: BoxDecoration(
         color: AppColors.white,
@@ -208,7 +208,7 @@ class FoodHorizontalCard extends StatelessWidget {
                   AppImage(
                     imageUrl: food.image,
                     height: 95,
-                    width: 170,
+                    width: 175,
                     category: food.category,
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
                   ),
@@ -258,15 +258,21 @@ class FoodHorizontalCard extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          '\$${food.price.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: AppColors.primary,
+                        Expanded(
+                          child: Text(
+                            AppFormatters.currency(food.price),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: AppColors.primary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        const SizedBox(width: 4),
                         Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             const Icon(Icons.star_rounded, color: Colors.amber, size: 15),
                             const SizedBox(width: 2),

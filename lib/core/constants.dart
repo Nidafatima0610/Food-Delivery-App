@@ -14,3 +14,15 @@ class AppStyles {
   static const subtitle = TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textDark);
   static const body = TextStyle(fontSize: 14, color: AppColors.textLight);
 }
+
+class AppFormatters {
+  static String currency(num amount) {
+    final int rounded = amount.round();
+    final str = rounded.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+    return 'Rs. $str';
+  }
+}
+

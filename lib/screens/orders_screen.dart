@@ -132,7 +132,7 @@ class OrdersScreen extends ConsumerWidget {
                                 ),
                               ),
                               Text(
-                                '\$${order.total.toStringAsFixed(2)}',
+                                AppFormatters.currency(order.total),
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: AppColors.primary),
                               ),
                             ],

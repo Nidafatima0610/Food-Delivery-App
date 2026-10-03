@@ -189,7 +189,7 @@ void main() {
 
       // Location header
       expect(find.text('DELIVER TO'), findsOneWidget);
-      expect(find.text('Home, 123 Main St, Lahore'), findsOneWidget);
+      expect(find.textContaining('123 Main St'), findsOneWidget);
 
       // Search bar
       expect(find.byIcon(Icons.search), findsOneWidget);
@@ -253,13 +253,13 @@ void main() {
       expect(find.text('Spice Route'), findsOneWidget);
       expect(find.text('Customizations & Add-ons'), findsOneWidget);
       expect(find.text('Special Instructions'), findsOneWidget);
-      expect(find.text('Add to Cart • \$6.99'), findsOneWidget);
+      expect(find.text('Add to Cart • Rs. 450'), findsOneWidget);
 
       // Increase quantity
       await tester.ensureVisible(find.byIcon(Icons.add_circle));
       await tester.tap(find.byIcon(Icons.add_circle));
       await tester.pumpAndSettle();
-      expect(find.text('Add to Cart • \$13.98'), findsOneWidget);
+      expect(find.text('Add to Cart • Rs. 900'), findsOneWidget);
     });
 
     testWidgets('SearchScreen searches both restaurants and food items accurately', (tester) async {
@@ -304,8 +304,7 @@ void main() {
       expect(find.text('My Cart'), findsOneWidget);
       expect(find.text('Spice Route'), findsOneWidget);
       expect(find.text('Chicken Biryani'), findsOneWidget);
-      expect(find.text('Proceed to Checkout'), findsNothing); // It's 'Checkout • $15.97'
-      expect(find.textContaining('Checkout • \$'), findsOneWidget);
+      expect(find.textContaining('Checkout • Rs.'), findsOneWidget);
     });
 
     testWidgets('CheckoutScreen displays order breakdown, address, and payment options', (tester) async {
@@ -334,7 +333,7 @@ void main() {
       expect(find.text('2x'), findsOneWidget);
       expect(find.text('Chicken Biryani'), findsOneWidget);
       expect(find.text('Payment Method'), findsOneWidget);
-      expect(find.text('Place Order • \$15.97'), findsOneWidget);
+      expect(find.text('Place Order • Rs. 999'), findsOneWidget);
     });
 
     testWidgets('OrdersScreen renders order history with restaurant name, status and items', (tester) async {
@@ -352,10 +351,10 @@ void main() {
         items: [
           CartItem(food: SampleData.foods.first, quantity: 2),
         ],
-        subtotal: 13.98,
-        deliveryFee: 1.99,
+        subtotal: 900.0,
+        deliveryFee: 99.0,
         discount: 0.0,
-        total: 15.97,
+        total: 999.0,
         date: DateTime.now(),
         status: OrderStatus.placed,
       );
@@ -375,7 +374,7 @@ void main() {
       expect(find.text('Spice Route'), findsOneWidget);
       expect(find.text('Order Placed'), findsOneWidget);
       expect(find.text('2x Chicken Biryani'), findsOneWidget);
-      expect(find.text('\$15.97'), findsOneWidget);
+      expect(find.text('Rs. 999'), findsOneWidget);
       expect(find.text('Track'), findsOneWidget);
       expect(find.text('Reorder'), findsOneWidget);
     });

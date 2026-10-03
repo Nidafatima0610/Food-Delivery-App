@@ -61,8 +61,55 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 onPressed: doLogin,
                 child: const Text('Login', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
-              const SizedBox(height: 16),
-              TextButton(onPressed: () {}, child: const Text('Forgot Password?')),
+              TextButton(
+                onPressed: () {
+                  final resetEmailController = TextEditingController(text: emailController.text);
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Reset Password'),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Enter your registered email address to receive password reset instructions.'),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: resetEmailController,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: InputDecoration(
+                              labelText: 'Email Address',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Cancel'),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                          onPressed: () {
+                            final email = resetEmailController.text.trim();
+                            Navigator.pop(context);
+                            if (email.isNotEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Password reset link sent to $email!'),
+                                  backgroundColor: AppColors.primary,
+                                ),
+                              );
+                            }
+                          },
+                          child: const Text('Send Link', style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                child: const Text('Forgot Password?', style: TextStyle(color: AppColors.primary)),
+              ),
             ],
           ),
         ),

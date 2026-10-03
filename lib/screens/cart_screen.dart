@@ -19,10 +19,10 @@ class CartScreen extends ConsumerWidget {
     // Lookup restaurant if available
     final restaurant = cartState.restaurantId != null
         ? SampleData.getRestaurantById(cartState.restaurantId!)
-        : null;
+        : (cartItems.isNotEmpty ? SampleData.getRestaurantById(cartItems.first.food.restaurantId) : null);
 
     final deliveryFee = cartItems.isNotEmpty
-        ? (restaurant?.deliveryFee ?? 1.99)
+        ? (restaurant?.deliveryFee ?? 80.0)
         : 0.0;
     final total = subtotal + deliveryFee;
 
@@ -133,7 +133,7 @@ class CartScreen extends ConsumerWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               Text(
-                                '${restaurant.deliveryTime} • \$${deliveryFee.toStringAsFixed(2)} delivery',
+                                '${restaurant.deliveryTime} • ${deliveryFee == 0 ? "Free delivery" : "${AppFormatters.currency(deliveryFee)} delivery"}',
                                 style: const TextStyle(color: AppColors.textLight, fontSize: 12),
                               ),
                             ],
@@ -206,7 +206,7 @@ class CartScreen extends ConsumerWidget {
                                   ],
                                   const SizedBox(height: 4),
                                   Text(
-                                    '\$${item.totalPrice.toStringAsFixed(2)}',
+                                    AppFormatters.currency(item.totalPrice),
                                     style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 14),
                                   ),
                                 ],
@@ -268,11 +268,34 @@ class CartScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (restaurant != null && subtotal < restaurant.minimumOrder) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 14),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.amber.shade300),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.info_outline, color: Colors.amber.shade800, size: 20),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Add ${AppFormatters.currency(restaurant.minimumOrder - subtotal)} more to reach minimum order of ${AppFormatters.currency(restaurant.minimumOrder)}.',
+                                  style: TextStyle(fontSize: 12, color: Colors.amber.shade900, fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text('Subtotal', style: TextStyle(color: AppColors.textLight)),
-                          Text('\$${subtotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                          Text(AppFormatters.currency(subtotal), style: const TextStyle(fontWeight: FontWeight.w600)),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -281,7 +304,7 @@ class CartScreen extends ConsumerWidget {
                         children: [
                           const Text('Delivery Fee', style: TextStyle(color: AppColors.textLight)),
                           Text(
-                            deliveryFee == 0 ? 'Free' : '\$${deliveryFee.toStringAsFixed(2)}',
+                            deliveryFee == 0 ? 'Free' : AppFormatters.currency(deliveryFee),
                             style: TextStyle(
                               color: deliveryFee == 0 ? Colors.green.shade700 : AppColors.textDark,
                               fontWeight: deliveryFee == 0 ? FontWeight.bold : FontWeight.w600,
@@ -295,35 +318,53 @@ class CartScreen extends ConsumerWidget {
                         children: [
                           const Text('Total', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                           Text(
-                            '\$${total.toStringAsFixed(2)}',
+                            AppFormatters.currency(total),
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: AppColors.primary),
                           ),
                         ],
                       ),
                       const SizedBox(height: 18),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          ),
-                          onPressed: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const CheckoutScreen()));
-                          },
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Checkout • \$${total.toStringAsFixed(2)}',
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                      Builder(
+                        builder: (context) {
+                          final isMinOrderMet = restaurant == null || subtotal >= restaurant.minimumOrder;
+                          return SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isMinOrderMet ? AppColors.primary : Colors.grey.shade400,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                               ),
-                              const SizedBox(width: 8),
-                              const Icon(Icons.arrow_forward, color: Colors.white, size: 18),
-                            ],
-                          ),
-                        ),
+                              onPressed: isMinOrderMet
+                                  ? () {
+                                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CheckoutScreen()));
+                                    }
+                                  : () {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Please add ${AppFormatters.currency(restaurant.minimumOrder - subtotal)} more to satisfy minimum order.'),
+                                          backgroundColor: Colors.orange.shade800,
+                                        ),
+                                      );
+                                    },
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    isMinOrderMet
+                                        ? 'Checkout • ${AppFormatters.currency(total)}'
+                                        : 'Min. Order: ${AppFormatters.currency(restaurant.minimumOrder)}',
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                                  ),
+                                  if (isMinOrderMet) ...[
+                                    const SizedBox(width: 8),
+                                    const Icon(Icons.arrow_forward, color: Colors.white, size: 18),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),

@@ -17,6 +17,7 @@ class FoodDetailsScreen extends ConsumerStatefulWidget {
 
 class _FoodDetailsScreenState extends ConsumerState<FoodDetailsScreen> {
   int quantity = 1;
+  String selectedSpiceLevel = 'Medium';
   final List<String> selectedAddons = [];
   final TextEditingController _notesController = TextEditingController();
 
@@ -62,7 +63,15 @@ class _FoodDetailsScreenState extends ConsumerState<FoodDetailsScreen> {
     final food = widget.food;
     final restaurant = SampleData.getRestaurantById(food.restaurantId);
     final availableAddons = _getAvailableAddons();
-    final double itemBaseWithAddons = food.price + (selectedAddons.length * 1.0);
+    final cat = food.category.toLowerCase();
+    final showSpiceOptions = cat.contains('biryani') ||
+        cat.contains('pakistani') ||
+        cat.contains('bbq') ||
+        cat.contains('burger') ||
+        cat.contains('fast food') ||
+        cat.contains('chinese') ||
+        cat.contains('snacks');
+    final double itemBaseWithAddons = food.price + (selectedAddons.length * 50.0);
     final double total = itemBaseWithAddons * quantity;
 
     return Scaffold(
@@ -156,7 +165,7 @@ class _FoodDetailsScreenState extends ConsumerState<FoodDetailsScreen> {
             Row(
               children: [
                 Text(
-                  '\$${food.price.toStringAsFixed(2)}',
+                  AppFormatters.currency(food.price),
                   style: const TextStyle(fontSize: 22, color: AppColors.primary, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(width: 10),
@@ -183,6 +192,44 @@ class _FoodDetailsScreenState extends ConsumerState<FoodDetailsScreen> {
             const SizedBox(height: 20),
             const Divider(),
 
+            // Spice Level Section
+            if (showSpiceOptions) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Text('Spice Level', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(4)),
+                    child: const Text('Free', style: TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: ['Mild', 'Medium', 'Hot / Spicy'].map((level) {
+                  final isSelected = selectedSpiceLevel == level;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(level),
+                      selected: isSelected,
+                      selectedColor: AppColors.primary,
+                      labelStyle: TextStyle(
+                        color: isSelected ? Colors.white : AppColors.textDark,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                      onSelected: (_) => setState(() => selectedSpiceLevel = level),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 14),
+              const Divider(),
+            ],
+
             // Add-ons Section
             if (availableAddons.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -198,7 +245,7 @@ class _FoodDetailsScreenState extends ConsumerState<FoodDetailsScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '+\$1.00 each',
+                    '+Rs. 50 each',
                     style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.w500),
                   ),
                 ],
@@ -210,7 +257,7 @@ class _FoodDetailsScreenState extends ConsumerState<FoodDetailsScreen> {
                   contentPadding: EdgeInsets.zero,
                   dense: true,
                   title: Text(addon, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-                  secondary: Text('+\$1.00', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                  secondary: Text('+Rs. 50', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
                   activeColor: AppColors.primary,
                   value: isSelected,
                   onChanged: (val) => toggleAddon(addon),
@@ -290,10 +337,14 @@ class _FoodDetailsScreenState extends ConsumerState<FoodDetailsScreen> {
               ),
               onPressed: () {
                 final cartNotifier = ref.read(cartProvider.notifier);
+                final customs = [
+                  if (showSpiceOptions) 'Spice: $selectedSpiceLevel',
+                  ...selectedAddons,
+                ];
                 final item = CartItem(
                   food: widget.food,
                   quantity: quantity,
-                  customizations: selectedAddons,
+                  customizations: customs,
                 );
 
                 final messenger = ScaffoldMessenger.of(context);
@@ -340,7 +391,7 @@ class _FoodDetailsScreenState extends ConsumerState<FoodDetailsScreen> {
                 }
               },
               child: Text(
-                'Add to Cart • \$${total.toStringAsFixed(2)}',
+                'Add to Cart • ${AppFormatters.currency(total)}',
                 style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
               ),
             ),

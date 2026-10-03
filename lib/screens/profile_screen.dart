@@ -94,6 +94,18 @@ class ProfileScreen extends ConsumerWidget {
               },
               child: const Text('Log Out', style: TextStyle(color: Colors.red, fontSize: 16)),
             )
+          else
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+              },
+              child: const Text('Log In / Register', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+            ),
         ],
       ),
     );

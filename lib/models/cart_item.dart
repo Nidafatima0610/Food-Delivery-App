@@ -11,7 +11,8 @@ class CartItem {
     this.customizations = const [],
   });
   
-  double get totalPrice => (food.price + (customizations.length * 1.0)) * quantity;
+  double get totalPrice =>
+      (food.price + (customizations.where((c) => !c.startsWith('Spice:')).length * 50.0)) * quantity;
 
   Map<String, dynamic> toJson() => {
     'food': food.toJson(),

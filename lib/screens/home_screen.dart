@@ -14,6 +14,7 @@ import 'food_details_screen.dart';
 import 'search_screen.dart';
 import 'notifications_screen.dart';
 import 'profile_screen.dart';
+import 'offers_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -24,6 +25,80 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   String selectedCategory = 'All';
+  String currentAddress = 'Home, 123 Main St, Gulberg III, Lahore';
+
+  void _showAddressSelector() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Choose Delivery Location', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _buildAddressTile(
+                'Home',
+                '123 Main St, Gulberg III, Lahore',
+                Icons.home_outlined,
+              ),
+              const Divider(height: 1),
+              _buildAddressTile(
+                'Work / Office',
+                'Software Technology Park, F-7/2, Islamabad',
+                Icons.work_outline,
+              ),
+              const Divider(height: 1),
+              _buildAddressTile(
+                'Family / Friends',
+                'House 18, Block 5, Clifton, Karachi',
+                Icons.people_outline,
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddressTile(String label, String address, IconData icon) {
+    final isSelected = currentAddress.contains(address);
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(vertical: 4),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : Colors.grey.shade100,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: isSelected ? AppColors.primary : Colors.grey.shade700),
+      ),
+      title: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+      subtitle: Text(address, style: const TextStyle(fontSize: 13, color: AppColors.textLight)),
+      trailing: isSelected ? const Icon(Icons.check_circle, color: AppColors.primary) : null,
+      onTap: () {
+        setState(() {
+          currentAddress = '$label, $address';
+        });
+        Navigator.pop(context);
+      },
+    );
+  }
 
   IconData _getCategoryIcon(String cat) {
     switch (cat.toLowerCase()) {
@@ -105,6 +180,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final unreadNotifs = ref.watch(notificationsProvider).where((n) => !n.isRead).length;
+    final previousOrders = ref.watch(ordersProvider);
 
     // Filtered data based on selected category
     final categoryRestaurants = SampleData.getRestaurantsForCategory(selectedCategory);
@@ -132,39 +208,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.location_on, color: AppColors.primary, size: 18),
-                              const SizedBox(width: 4),
-                              Text(
-                                'DELIVER TO',
-                                style: TextStyle(
-                                  color: Colors.grey.shade600,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.8,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: _showAddressSelector,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.location_on, color: AppColors.primary, size: 18),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'DELIVER TO',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.8,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  'Home, 123 Main St, Lahore',
-                                  style: AppStyles.subtitle.copyWith(fontSize: 16, fontWeight: FontWeight.bold),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    currentAddress,
+                                    style: AppStyles.subtitle.copyWith(fontSize: 15, fontWeight: FontWeight.bold),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
-                              const Icon(Icons.keyboard_arrow_down, color: AppColors.primary, size: 20),
-                            ],
-                          ),
-                        ],
+                                const Icon(Icons.keyboard_arrow_down, color: AppColors.primary, size: 20),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     Row(
@@ -274,72 +354,81 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // 3. Promotional Banner
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFF4B3A), Color(0xFFFF7A59)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFF4B3A).withValues(alpha: 0.35),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const OffersScreen()));
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFF4B3A), Color(0xFFFF7A59)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFF4B3A).withValues(alpha: 0.35),
+                            blurRadius: 12,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.25),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text(
-                                'PROMO CODE: WELCOME10',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.8,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.25),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Text(
+                                    'PROMO CODE: WELCOME10',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Free Delivery & 10% OFF',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 19,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Tap to view all discount coupons & deals',
+                                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Free Delivery & 10% OFF',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 19,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
                             ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'On all orders across the catalog',
-                              style: TextStyle(color: Colors.white70, fontSize: 12),
-                            ),
-                          ],
-                        ),
+                            child: const Icon(Icons.delivery_dining, color: Colors.white, size: 36),
+                          ),
+                        ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.delivery_dining, color: Colors.white, size: 36),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -517,6 +606,130 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ],
               ] else ...[
                 // DEFAULT CURATED HOME PAGE SECTIONS
+
+                // Quick Order / Order Again (Only when previous orders exist!)
+                if (previousOrders.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.history, color: AppColors.primary, size: 20),
+                        const SizedBox(width: 8),
+                        Text('Order Again', style: AppStyles.title.copyWith(fontSize: 18)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 145,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: previousOrders.take(4).length,
+                      itemBuilder: (context, index) {
+                        final order = previousOrders[index];
+                        final dishNames = order.items.map((i) => '${i.quantity}x ${i.food.name}').join(', ');
+                        return Container(
+                          width: 290,
+                          margin: const EdgeInsets.only(right: 12),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.grey.shade200),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      order.restaurantName,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Text(
+                                    AppFormatters.currency(order.total),
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                dishNames,
+                                style: const TextStyle(color: AppColors.textLight, fontSize: 12),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  OutlinedButton(
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: AppColors.primary,
+                                      side: const BorderSide(color: AppColors.primary),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                    onPressed: () {
+                                      final targetRes = SampleData.getRestaurantById(order.restaurantId);
+                                      if (targetRes != null) {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => RestaurantDetailsScreen(restaurant: targetRes),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: const Text('View Menu', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primary,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                    onPressed: () {
+                                      final cartNotifier = ref.read(cartProvider.notifier);
+                                      for (var item in order.items) {
+                                        cartNotifier.addItem(item);
+                                      }
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Items from ${order.restaurantName} added to cart!'),
+                                          backgroundColor: AppColors.primary,
+                                          duration: const Duration(seconds: 2),
+                                        ),
+                                      );
+                                    },
+                                    child: const Text('Reorder', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+
                 const SizedBox(height: 24),
 
                 // 5. Popular Restaurants
@@ -674,57 +887,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 // 8. Offers / Deals Banner
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF2C3E50), Color(0xFF3498DB)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const OffersScreen()));
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF2C3E50), Color(0xFF3498DB)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(18),
                       ),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: Colors.amber,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: const Text(
-                                  'LIMITED OFFER',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Text(
+                                    'LIMITED OFFER',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                '20% OFF on Desi & BBQ',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.bold,
+                                const SizedBox(height: 8),
+                                const Text(
+                                  '20% OFF on Desi & BBQ',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              const Text(
-                                'Use coupon FEAST20 on checkout',
-                                style: TextStyle(color: Colors.white70, fontSize: 12),
-                              ),
-                            ],
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Tap to view coupon FEAST20 and more offers',
+                                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        const Icon(Icons.local_offer, color: Colors.amber, size: 40),
-                      ],
+                          const Icon(Icons.local_offer, color: Colors.amber, size: 40),
+                        ],
+                      ),
                     ),
                   ),
                 ),

@@ -210,16 +210,16 @@ class _RestaurantDetailsScreenState extends ConsumerState<RestaurantDetailsScree
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildInfoColumn(Icons.star_rounded, '${restaurant.rating}', '${restaurant.reviewCount} reviews', Colors.amber),
-                      _buildInfoColumn(Icons.schedule, restaurant.deliveryTime, 'Delivery Time', Colors.blue),
+                      _buildInfoColumn(Icons.delivery_dining, '🚴 ${restaurant.deliveryTime}', 'Est. Delivery', Colors.blue),
                       _buildInfoColumn(
-                        Icons.delivery_dining,
-                        restaurant.deliveryFee == 0 ? 'Free' : '\$${restaurant.deliveryFee.toStringAsFixed(2)}',
+                        Icons.payments_outlined,
+                        restaurant.deliveryFee == 0 ? 'Free' : AppFormatters.currency(restaurant.deliveryFee),
                         'Delivery Fee',
                         Colors.green,
                       ),
                       _buildInfoColumn(
                         Icons.shopping_bag_outlined,
-                        '\$${restaurant.minimumOrder.toStringAsFixed(0)}',
+                        AppFormatters.currency(restaurant.minimumOrder),
                         'Min Order',
                         Colors.orange,
                       ),
@@ -330,7 +330,7 @@ class _RestaurantDetailsScreenState extends ConsumerState<RestaurantDetailsScree
                             style: const TextStyle(fontSize: 12, color: AppColors.textLight),
                           ),
                           Text(
-                            '\$${ref.watch(cartProvider.notifier).subtotal.toStringAsFixed(2)}',
+                            AppFormatters.currency(ref.watch(cartProvider.notifier).subtotal),
                             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
                           ),
                         ],

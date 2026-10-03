@@ -31,11 +31,17 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     super.dispose();
   }
 
-  void applyCoupon(double subtotal) {
+  void applyCoupon(double subtotal, double currentDeliveryFee) {
     final code = _couponController.text.trim().toUpperCase();
     if (code.isEmpty) return;
 
     if (code == 'WELCOME10') {
+      if (subtotal < 500) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Minimum order of Rs. 500 required for WELCOME10.')),
+        );
+        return;
+      }
       setState(() {
         discountPercentage = 10.0;
         flatDiscount = 0.0;
@@ -45,6 +51,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         const SnackBar(content: Text('Coupon WELCOME10 applied! 10% discount added.')),
       );
     } else if (code == 'FEAST20') {
+      if (subtotal < 1000) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Minimum order of Rs. 1,000 required for FEAST20.')),
+        );
+        return;
+      }
       setState(() {
         discountPercentage = 20.0;
         flatDiscount = 0.0;
@@ -53,10 +65,31 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Coupon FEAST20 applied! 20% discount added.')),
       );
+    } else if (code == 'BIRYANI15') {
+      if (subtotal < 600) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Minimum order of Rs. 600 required for BIRYANI15.')),
+        );
+        return;
+      }
+      setState(() {
+        discountPercentage = 15.0;
+        flatDiscount = 0.0;
+        appliedCouponCode = code;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Coupon BIRYANI15 applied! 15% discount added.')),
+      );
     } else if (code == 'FREESHIP') {
+      if (subtotal < 600) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Minimum order of Rs. 600 required for FREESHIP.')),
+        );
+        return;
+      }
       setState(() {
         discountPercentage = 0.0;
-        flatDiscount = 1.99;
+        flatDiscount = currentDeliveryFee;
         appliedCouponCode = code;
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -64,7 +97,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid coupon code. Try WELCOME10 or FEAST20.')),
+        const SnackBar(content: Text('Invalid coupon code. Try WELCOME10, FEAST20, or BIRYANI15.')),
       );
     }
   }
@@ -77,9 +110,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
     final restaurant = cartState.restaurantId != null
         ? SampleData.getRestaurantById(cartState.restaurantId!)
-        : null;
+        : (cartItems.isNotEmpty ? SampleData.getRestaurantById(cartItems.first.food.restaurantId) : null);
 
-    final deliveryFee = cartItems.isNotEmpty ? (restaurant?.deliveryFee ?? 1.99) : 0.0;
+    final deliveryFee = cartItems.isNotEmpty ? (restaurant?.deliveryFee ?? 80.0) : 0.0;
     final calculatedDiscount = (discountPercentage > 0)
         ? (subtotal * (discountPercentage / 100))
         : flatDiscount;
@@ -241,7 +274,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                             ),
                           ),
                           Text(
-                            '\$${item.totalPrice.toStringAsFixed(2)}',
+                            AppFormatters.currency(item.totalPrice),
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                         ],
@@ -310,7 +343,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         controller: _couponController,
                         textCapitalization: TextCapitalization.characters,
                         decoration: const InputDecoration(
-                          hintText: 'Enter WELCOME10 or FEAST20',
+                          hintText: 'Enter WELCOME10, FEAST20 or BIRYANI15',
                           hintStyle: TextStyle(fontSize: 13, color: AppColors.textLight),
                           border: InputBorder.none,
                         ),
@@ -322,7 +355,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       ),
-                      onPressed: () => applyCoupon(subtotal),
+                      onPressed: () => applyCoupon(subtotal, deliveryFee),
                       child: const Text('Apply', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     ),
                   ],
@@ -347,7 +380,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('Subtotal', style: TextStyle(color: AppColors.textLight)),
-                        Text('\$${subtotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                        Text(AppFormatters.currency(subtotal), style: const TextStyle(fontWeight: FontWeight.w600)),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -356,7 +389,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       children: [
                         const Text('Delivery Fee', style: TextStyle(color: AppColors.textLight)),
                         Text(
-                          deliveryFee == 0 ? 'Free' : '\$${deliveryFee.toStringAsFixed(2)}',
+                          deliveryFee == 0 ? 'Free' : AppFormatters.currency(deliveryFee),
                           style: TextStyle(
                             color: deliveryFee == 0 ? Colors.green.shade700 : AppColors.textDark,
                             fontWeight: deliveryFee == 0 ? FontWeight.bold : FontWeight.w600,
@@ -371,7 +404,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         children: [
                           Text('Discount ($appliedCouponCode)', style: const TextStyle(color: Colors.green)),
                           Text(
-                            '-\$${calculatedDiscount.toStringAsFixed(2)}',
+                            '-${AppFormatters.currency(calculatedDiscount)}',
                             style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
                           ),
                         ],
@@ -383,7 +416,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       children: [
                         const Text('Final Total', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                         Text(
-                          '\$${total.toStringAsFixed(2)}',
+                          AppFormatters.currency(total),
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 22, color: AppColors.primary),
                         ),
                       ],
@@ -443,12 +476,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
                     Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (_) => const OrderSuccessScreen()),
+                      MaterialPageRoute(builder: (_) => OrderSuccessScreen(order: order)),
                       (route) => false,
                     );
                   },
                   child: Text(
-                    'Place Order • \$${total.toStringAsFixed(2)}',
+                    'Place Order • ${AppFormatters.currency(total)}',
                     style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ),
