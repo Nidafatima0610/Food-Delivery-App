@@ -16,21 +16,70 @@ class FavoritesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Favorites', style: TextStyle(color: AppColors.textDark)),
+        title: const Text('My Favorites', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold)),
         backgroundColor: AppColors.white,
-        elevation: 0,
+        elevation: 0.5,
       ),
       backgroundColor: AppColors.background,
       body: favRestaurants.isEmpty
-          ? const Center(child: Text('No favorites yet', style: AppStyles.subtitle))
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.favorite_border, size: 70, color: AppColors.primary),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text('No favorites yet', style: AppStyles.title),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Tap the heart icon on any restaurant card to save your favorite spots here.',
+                      style: AppStyles.body,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        Navigator.popUntil(context, (route) => route.isFirst);
+                      },
+                      child: const Text('Explore Restaurants', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              ),
+            )
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: favRestaurants.length,
               itemBuilder: (context, index) {
+                final restaurant = favRestaurants[index];
                 return RestaurantCard(
-                  restaurant: favRestaurants[index],
+                  restaurant: restaurant,
                   onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => RestaurantDetailsScreen(restaurant: favRestaurants[index])));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => RestaurantDetailsScreen(restaurant: restaurant),
+                      ),
+                    );
                   },
                 );
               },

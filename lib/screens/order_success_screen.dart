@@ -10,27 +10,44 @@ class OrderSuccessScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.white,
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.check_circle, color: Colors.green, size: 100),
-            const SizedBox(height: 24),
-            const Text('Order Placed!', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            const Text('Your food is on the way', style: TextStyle(color: AppColors.textLight, fontSize: 16)),
-            const SizedBox(height: 48),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check_circle, color: Colors.green, size: 85),
               ),
-              onPressed: () {
-                Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const MainNavigation()), (route) => false);
-              },
-              child: const Text('Back to Home', style: TextStyle(color: AppColors.white, fontSize: 16)),
-            )
-          ],
+              const SizedBox(height: 28),
+              const Text('Order Placed Successfully!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              const Text(
+                'Your delicious food is being prepared and will be delivered shortly.',
+                style: TextStyle(color: AppColors.textLight, fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 40),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: () {
+                    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const MainNavigation()), (route) => false);
+                  },
+                  child: const Text('Back to Home', style: TextStyle(color: AppColors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

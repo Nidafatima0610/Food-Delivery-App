@@ -1,4 +1,6 @@
-import '../models/restaurant.dart';
+import re
+
+data_code = '''import '../models/restaurant.dart';
 import '../models/food_item.dart';
 import '../models/coupon.dart';
 
@@ -2192,7 +2194,7 @@ class SampleData {
   ];
 
   static List<Restaurant> getRestaurantsForCategory(String category) {
-    if (category == 'All') return List<Restaurant>.from(restaurants);
+    if (category == 'All') return restaurants;
     final catLower = category.toLowerCase().trim();
     return restaurants.where((r) {
       if (r.cuisine.toLowerCase() == catLower) return true;
@@ -2206,7 +2208,7 @@ class SampleData {
   }
 
   static List<FoodItem> getFoodsForCategory(String category) {
-    if (category == 'All') return List<FoodItem>.from(foods);
+    if (category == 'All') return foods;
     final catLower = category.toLowerCase().trim();
     return foods.where((f) =>
         f.category.toLowerCase() == catLower ||
@@ -2226,3 +2228,9 @@ class SampleData {
     }
   }
 }
+'''
+
+with open('lib/core/sample_data.dart', 'w', encoding='utf-8') as f:
+    f.write(data_code)
+
+print('Updated lib/core/sample_data.dart successfully!')
