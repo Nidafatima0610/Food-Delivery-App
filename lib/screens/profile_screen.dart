@@ -856,14 +856,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildCard(List<Widget> children) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
-        ],
-      ),
+    return Material(
+      color: AppColors.white,
+      borderRadius: BorderRadius.circular(16),
+      elevation: 1,
+      shadowColor: Colors.black.withValues(alpha: 0.06),
+      clipBehavior: Clip.antiAlias,
       child: Column(children: children),
     );
   }

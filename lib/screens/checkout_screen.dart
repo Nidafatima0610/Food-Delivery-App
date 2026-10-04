@@ -27,6 +27,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   double flatDiscount = 0.0;
   String appliedCouponCode = '';
   String paymentMethod = 'Cash on Delivery';
+  String deliverySpeed = 'Standard'; // 'Standard' or 'Priority'
   String deliveryAddress = 'House 14, Street 3, Model Town A, Bahawalpur';
   String deliveryLabel = 'Home';
   final formKey = GlobalKey<FormState>();
@@ -51,8 +52,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         final subtotal = ref.read(cartProvider.notifier).subtotal;
         final cartState = ref.read(cartProvider);
         final restaurant = cartState.restaurantId != null ? SampleData.getRestaurantById(cartState.restaurantId!) : null;
-        final deliveryFee = restaurant?.deliveryFee ?? 80.0;
-        applyCoupon(subtotal, deliveryFee);
+        final baseFee = restaurant?.deliveryFee ?? 80.0;
+        final fee = deliverySpeed == 'Priority' ? (baseFee + 50.0) : baseFee;
+        applyCoupon(subtotal, fee);
       });
     }
   }
@@ -64,6 +66,18 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     _phoneController.dispose();
     _notesController.dispose();
     super.dispose();
+  }
+
+  void removeCoupon() {
+    setState(() {
+      appliedCouponCode = '';
+      discountPercentage = 0.0;
+      flatDiscount = 0.0;
+      _couponController.clear();
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Coupon removed.')),
+    );
   }
 
   void applyCoupon(double subtotal, double currentDeliveryFee) {
@@ -85,7 +99,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           flatDiscount = 0.0;
         } else {
           discountPercentage = 0.0;
-          flatDiscount = coupon.code == 'FREESHIP' ? currentDeliveryFee : coupon.discountValue;
+          flatDiscount = (coupon.code == 'FREESHIP' || coupon.code == 'FREEDELIVERY') ? currentDeliveryFee : coupon.discountValue;
         }
         appliedCouponCode = coupon.code;
       });
@@ -94,7 +108,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid coupon code. Try WELCOME10, FEAST20, FREESHIP or BIRYANI15.')),
+        const SnackBar(content: Text('Invalid coupon code. Try WELCOME50, FOOD100, FREEDELIVERY or FEAST20.')),
       );
     }
   }
@@ -209,7 +223,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         ? SampleData.getRestaurantById(cartState.restaurantId!)
         : (cartItems.isNotEmpty ? SampleData.getRestaurantById(cartItems.first.food.restaurantId) : null);
 
-    final deliveryFee = cartItems.isNotEmpty ? (restaurant?.deliveryFee ?? 80.0) : 0.0;
+    final baseDeliveryFee = cartItems.isNotEmpty ? (restaurant?.deliveryFee ?? 80.0) : 0.0;
+    final deliveryFee = deliverySpeed == 'Priority' ? (baseDeliveryFee + 50.0) : baseDeliveryFee;
     final calculatedDiscount = (discountPercentage > 0)
         ? (subtotal * (discountPercentage / 100))
         : flatDiscount;
@@ -280,6 +295,110 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     IconButton(
                       icon: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
                       onPressed: () => _showEditAddressDialog(context),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 18),
+
+              // 1.2 Delivery Speed Option
+              const Text('Delivery Speed', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    InkWell(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                      onTap: () => setState(() => deliverySpeed = 'Standard'),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Row(
+                          children: [
+                            Icon(
+                              deliverySpeed == 'Standard' ? Icons.radio_button_checked : Icons.radio_button_off,
+                              color: deliverySpeed == 'Standard' ? AppColors.primary : Colors.grey,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Standard Delivery (30 - 45 mins)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    baseDeliveryFee == 0 ? 'Free standard delivery' : 'Regular courier delivery (${AppFormatters.currency(baseDeliveryFee)})',
+                                    style: const TextStyle(fontSize: 12, color: AppColors.textLight),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              baseDeliveryFee == 0 ? 'Free' : AppFormatters.currency(baseDeliveryFee),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                                color: baseDeliveryFee == 0 ? Colors.green : AppColors.textDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    InkWell(
+                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(14)),
+                      onTap: () => setState(() => deliverySpeed = 'Priority'),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Row(
+                          children: [
+                            Icon(
+                              deliverySpeed == 'Priority' ? Icons.radio_button_checked : Icons.radio_button_off,
+                              color: deliverySpeed == 'Priority' ? AppColors.primary : Colors.grey,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Wrap(
+                                    crossAxisAlignment: WrapCrossAlignment.center,
+                                    spacing: 6,
+                                    runSpacing: 2,
+                                    children: [
+                                      const Text('Priority Delivery (20 - 30 mins)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(color: Colors.amber.shade100, borderRadius: BorderRadius.circular(4)),
+                                        child: const Text('FASTEST', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.brown)),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  const Text(
+                                    'Direct doorstep delivery without intermediate stops',
+                                    style: TextStyle(fontSize: 12, color: AppColors.textLight),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Text(
+                              AppFormatters.currency(baseDeliveryFee + 50.0),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -444,18 +563,24 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       'Cash on Delivery',
                       Icons.money,
                       Colors.green,
-                    ),
-                    const Divider(height: 1),
-                    _buildPaymentOption(
-                      'Credit / Debit Card',
-                      Icons.credit_card,
-                      Colors.blue,
+                      isFunctional: true,
+                      subtitle: 'Pay cash to rider upon doorstep delivery',
                     ),
                     const Divider(height: 1),
                     _buildPaymentOption(
                       'Mobile Wallet (JazzCash / EasyPaisa)',
                       Icons.account_balance_wallet,
                       Colors.orange,
+                      isFunctional: false,
+                      subtitle: 'Offline Demo (Digital gateway disabled)',
+                    ),
+                    const Divider(height: 1),
+                    _buildPaymentOption(
+                      'Credit / Debit Card',
+                      Icons.credit_card,
+                      Colors.blue,
+                      isFunctional: false,
+                      subtitle: 'Offline Demo (Online card processing disabled)',
                     ),
                   ],
                 ),
@@ -466,42 +591,77 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               // 4. Coupon Code
               const Text('Promotions & Coupons', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.local_offer_outlined, color: AppColors.primary, size: 22),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        controller: _couponController,
-                        textCapitalization: TextCapitalization.characters,
-                        decoration: const InputDecoration(
-                          hintText: 'Enter WELCOME10, FEAST20 or BIRYANI15',
-                          hintStyle: TextStyle(fontSize: 13, color: AppColors.textLight),
-                          border: InputBorder.none,
+              if (appliedCouponCode.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.green.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.green, size: 22),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Coupon "$appliedCouponCode" Active!',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green),
+                            ),
+                            Text(
+                              'Discount: ${AppFormatters.currency(calculatedDiscount)}',
+                              style: TextStyle(fontSize: 12, color: Colors.green.shade700),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      TextButton(
+                        onPressed: removeCoupon,
+                        child: const Text('Remove', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                       ),
-                      onPressed: () => applyCoupon(subtotal, deliveryFee),
-                      child: const Text('Apply', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
+                    ],
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.local_offer_outlined, color: AppColors.primary, size: 22),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _couponController,
+                          textCapitalization: TextCapitalization.characters,
+                          decoration: const InputDecoration(
+                            hintText: 'Try WELCOME50, FOOD100 or FREEDELIVERY',
+                            hintStyle: TextStyle(fontSize: 13, color: AppColors.textLight),
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        ),
+                        onPressed: () => applyCoupon(subtotal, deliveryFee),
+                        child: const Text('Apply', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
               const SizedBox(height: 24),
 
@@ -528,7 +688,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Delivery Fee', style: TextStyle(color: AppColors.textLight)),
+                        Text(
+                          deliverySpeed == 'Priority' ? 'Priority Delivery Fee' : 'Delivery Fee',
+                          style: const TextStyle(color: AppColors.textLight),
+                        ),
                         Text(
                           deliveryFee == 0 ? 'Free' : AppFormatters.currency(deliveryFee),
                           style: TextStyle(
@@ -601,6 +764,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     final restaurantName = resObj?.name ?? 'Restaurant';
 
                     final fullDeliveryInfo = '$deliveryAddress\nRecipient: ${_nameController.text.trim()} (${_phoneController.text.trim()})${_notesController.text.trim().isNotEmpty ? "\nNote: ${_notesController.text.trim()}" : ""}';
+                    final deliveryMethodText = deliverySpeed == 'Priority'
+                        ? 'Priority Delivery (20-30 mins)'
+                        : 'Standard Delivery (30-45 mins)';
 
                     final order = OrderModel(
                       id: const Uuid().v4(),
@@ -615,7 +781,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                       date: DateTime.now(),
                       status: OrderStatus.placed,
                       deliveryAddress: fullDeliveryInfo,
-                      paymentMethod: paymentMethod,
+                      paymentMethod: 'Cash on Delivery',
+                      deliveryMethod: deliveryMethodText,
                     );
 
                     ref.read(ordersProvider.notifier).addOrder(order);
@@ -625,7 +792,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                           AppNotification(
                             id: const Uuid().v4(),
                             title: 'Order Placed Successfully!',
-                            message: 'Your order #${order.id.substring(0, 8)} from $restaurantName has been placed.',
+                            message: 'Your order #${order.id.substring(0, 8)} from $restaurantName has been placed via Cash on Delivery.',
                             date: DateTime.now(),
                           ),
                         );
@@ -650,30 +817,65 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     );
   }
 
-  Widget _buildPaymentOption(String title, IconData icon, Color iconColor) {
+  Widget _buildPaymentOption(
+    String title,
+    IconData icon,
+    Color iconColor, {
+    required bool isFunctional,
+    required String subtitle,
+  }) {
     final isSelected = paymentMethod == title;
     return InkWell(
-      onTap: () => setState(() => paymentMethod = title),
+      onTap: () {
+        if (!isFunctional) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$title is disabled for this offline demo. Please proceed with Cash on Delivery.'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        } else {
+          setState(() => paymentMethod = title);
+        }
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, color: iconColor, size: 22),
+            Icon(icon, color: isFunctional ? iconColor : Colors.grey, size: 22),
             const SizedBox(width: 14),
             Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isFunctional ? AppColors.textDark : Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 11, color: isFunctional ? Colors.green.shade700 : Colors.grey),
+                  ),
+                ],
               ),
             ),
-            Icon(
-              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-              color: isSelected ? AppColors.primary : Colors.grey.shade400,
-              size: 20,
-            ),
+            if (isFunctional)
+              Icon(
+                isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                color: isSelected ? AppColors.primary : Colors.grey.shade400,
+                size: 20,
+              )
+            else
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(4)),
+                child: const Text('Offline Demo', style: TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
+              ),
           ],
         ),
       ),

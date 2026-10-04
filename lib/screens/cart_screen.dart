@@ -22,9 +22,12 @@ class CartScreen extends ConsumerWidget {
         ? SampleData.getRestaurantById(cartState.restaurantId!)
         : (cartItems.isNotEmpty ? SampleData.getRestaurantById(cartItems.first.food.restaurantId) : null);
 
-    final deliveryFee = cartItems.isNotEmpty
+    const freeDeliveryThreshold = 1500.0;
+    final isFreeDelivery = subtotal >= freeDeliveryThreshold;
+    final rawDeliveryFee = cartItems.isNotEmpty
         ? (restaurant?.deliveryFee ?? 80.0)
         : 0.0;
+    final deliveryFee = isFreeDelivery ? 0.0 : rawDeliveryFee;
     final total = subtotal + deliveryFee;
 
     return Scaffold(
@@ -319,6 +322,57 @@ class CartScreen extends ConsumerWidget {
                           ),
                         ),
                       ],
+                      // Free Delivery Milestone Banner (Requirement 12)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 14),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isFreeDelivery ? Colors.green.shade50 : Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isFreeDelivery ? Colors.green.shade300 : Colors.orange.shade200,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  isFreeDelivery ? Icons.check_circle : Icons.local_shipping_outlined,
+                                  size: 18,
+                                  color: isFreeDelivery ? Colors.green.shade800 : Colors.orange.shade900,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    isFreeDelivery
+                                        ? '🎉 Free Delivery Unlocked!'
+                                        : 'Add ${AppFormatters.currency(freeDeliveryThreshold - subtotal)} more for Free Delivery!',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                      color: isFreeDelivery ? Colors.green.shade900 : Colors.orange.shade900,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (!isFreeDelivery) ...[
+                              const SizedBox(height: 6),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: (subtotal / freeDeliveryThreshold).clamp(0.0, 1.0),
+                                  backgroundColor: Colors.orange.shade100,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.orange.shade700),
+                                  minHeight: 4,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [

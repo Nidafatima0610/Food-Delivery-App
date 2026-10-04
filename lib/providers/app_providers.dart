@@ -110,6 +110,11 @@ class OrdersNotifier extends Notifier<List<OrderModel>> {
     _save();
   }
 
+  void updateOrderStatus(String orderId, OrderStatus status) {
+    state = state.map((o) => o.id == orderId ? o.copyWith(status: status) : o).toList();
+    _save();
+  }
+
   void _save() {
     ref.read(storageServiceProvider).setStringList('orders', state.map((e) => jsonEncode(e.toJson())).toList());
   }
@@ -292,3 +297,30 @@ class SettingsNotifier extends Notifier<Map<String, dynamic>> {
   }
 }
 final settingsProvider = NotifierProvider<SettingsNotifier, Map<String, dynamic>>(() => SettingsNotifier());
+
+class RecentSearchesNotifier extends Notifier<List<String>> {
+  @override
+  List<String> build() {
+    return ref.watch(storageServiceProvider).getStringList('recent_searches');
+  }
+
+  void addSearch(String query) {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return;
+    final updated = [trimmed, ...state.where((s) => s.toLowerCase() != trimmed.toLowerCase())].take(8).toList();
+    state = updated;
+    ref.read(storageServiceProvider).setStringList('recent_searches', updated);
+  }
+
+  void removeSearch(String query) {
+    final updated = state.where((s) => s != query).toList();
+    state = updated;
+    ref.read(storageServiceProvider).setStringList('recent_searches', updated);
+  }
+
+  void clearSearches() {
+    state = [];
+    ref.read(storageServiceProvider).setStringList('recent_searches', []);
+  }
+}
+final recentSearchesProvider = NotifierProvider<RecentSearchesNotifier, List<String>>(() => RecentSearchesNotifier());

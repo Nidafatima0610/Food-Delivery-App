@@ -15,9 +15,12 @@ import 'package:food_delivery_app/screens/food_details_screen.dart';
 import 'package:food_delivery_app/screens/cart_screen.dart';
 import 'package:food_delivery_app/screens/checkout_screen.dart';
 import 'package:food_delivery_app/screens/orders_screen.dart';
+import 'package:food_delivery_app/screens/order_tracking_screen.dart';
 import 'package:food_delivery_app/screens/favorites_screen.dart';
 import 'package:food_delivery_app/screens/search_screen.dart';
 import 'package:food_delivery_app/screens/restaurant_list_screen.dart';
+import 'package:food_delivery_app/screens/offers_screen.dart';
+import 'package:food_delivery_app/screens/profile_screen.dart';
 
 final Uint8List _kTransparentImage = Uint8List.fromList(<int>[
   0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49,
@@ -115,12 +118,12 @@ void main() {
       }
     });
 
-    test('Each restaurant has between 3 and 8 food items', () {
+    test('Each restaurant has between 8 and 15 food items', () {
       for (final restaurant in SampleData.restaurants) {
         final restaurantFoods = SampleData.foods.where((f) => f.restaurantId == restaurant.id).toList();
         expect(
           restaurantFoods.length,
-          inInclusiveRange(3, 8),
+          inInclusiveRange(8, 15),
           reason: 'Restaurant ${restaurant.name} has ${restaurantFoods.length} items',
         );
       }
@@ -215,7 +218,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('All Restaurants'), findsOneWidget);
-      expect(find.text('25 restaurants found'), findsOneWidget);
+      expect(find.text('25 spots in Bahawalpur'), findsOneWidget);
       expect(find.text('Sultani BBQ & Charcoal Grill'), findsOneWidget);
     });
 
@@ -390,6 +393,75 @@ void main() {
 
       expect(find.text('My Favorites'), findsOneWidget);
       expect(find.text('Al-Noor Dum Biryani & Pulao'), findsOneWidget);
+    });
+
+    testWidgets('OrderTrackingScreen displays order details and simulates progression', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(500, 1000));
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+      );
+
+      final dummyOrder = OrderModel(
+        id: 'ord-track-test',
+        restaurantId: 'r1',
+        restaurantName: 'Al-Noor Dum Biryani & Pulao',
+        items: [
+          CartItem(food: SampleData.foods.first, quantity: 1),
+        ],
+        subtotal: 480.0,
+        deliveryFee: 70.0,
+        discount: 0.0,
+        total: 550.0,
+        date: DateTime.now(),
+        status: OrderStatus.placed,
+      );
+
+      container.read(ordersProvider.notifier).addOrder(dummyOrder);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: OrderTrackingScreen(order: dummyOrder),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Order Details'), findsOneWidget);
+      expect(find.text('Order Status Timeline'), findsOneWidget);
+      expect(find.text('Advance Next Milestone (Demo)'), findsOneWidget);
+
+      // Tap advance button
+      await tester.tap(find.text('Advance Next Milestone (Demo)'));
+      await tester.pumpAndSettle();
+
+      // Status should have advanced to Confirmed
+      expect(container.read(ordersProvider).first.status, OrderStatus.confirmed);
+    });
+
+    testWidgets('OffersScreen renders coupons and allows interaction', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(500, 1000));
+      await tester.pumpWidget(createTestApp(const OffersScreen()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Offers & Deals'), findsOneWidget);
+      expect(find.text('WELCOME50'), findsOneWidget);
+      expect(find.text('FREEDELIVERY'), findsOneWidget);
+    });
+
+    testWidgets('ProfileScreen renders account and preference sections', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(500, 1600));
+      await tester.pumpWidget(createTestApp(const ProfileScreen()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Settings & Profile'), findsOneWidget);
+      expect(find.text('ACCOUNT'), findsOneWidget);
+      expect(find.text('APP PREFERENCES'), findsOneWidget);
+      expect(find.text('Dark Mode'), findsOneWidget);
+      expect(find.text('Help Center & FAQs'), findsOneWidget);
     });
   });
 }

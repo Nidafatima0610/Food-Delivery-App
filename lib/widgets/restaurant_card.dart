@@ -337,13 +337,18 @@ class RestaurantHorizontalCard extends ConsumerWidget {
                           restaurant.rating.toStringAsFixed(1),
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                         ),
+                        const SizedBox(width: 6),
                         const Spacer(),
-                        Text(
-                          restaurant.deliveryFee == 0 ? 'Free Delivery' : '${AppFormatters.currency(restaurant.deliveryFee)} fee',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: restaurant.deliveryFee == 0 ? Colors.green.shade700 : AppColors.textLight,
-                            fontWeight: restaurant.deliveryFee == 0 ? FontWeight.bold : FontWeight.normal,
+                        Flexible(
+                          child: Text(
+                            restaurant.deliveryFee == 0 ? 'Free' : AppFormatters.currency(restaurant.deliveryFee),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: restaurant.deliveryFee == 0 ? Colors.green.shade700 : AppColors.textLight,
+                              fontWeight: restaurant.deliveryFee == 0 ? FontWeight.bold : FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],

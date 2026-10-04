@@ -88,17 +88,29 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     }
   }
 
+  void _performSearch(String term) {
+    final trimmed = term.trim();
+    if (trimmed.isNotEmpty) {
+      ref.read(recentSearchesProvider.notifier).addSearch(trimmed);
+    }
+    _searchController.text = term;
+    setState(() => query = term);
+  }
+
   @override
   Widget build(BuildContext context) {
     final q = query.trim().toLowerCase();
+    final recentSearches = ref.watch(recentSearchesProvider);
 
-    // Search both restaurants and foods
+    // Search across names, cuisines, descriptions, categories, and tags
     final matchingRestaurants = q.isEmpty
         ? <Restaurant>[]
         : SampleData.restaurants.where((r) {
             return r.name.toLowerCase().contains(q) ||
                 r.cuisine.toLowerCase().contains(q) ||
-                r.description.toLowerCase().contains(q);
+                r.description.toLowerCase().contains(q) ||
+                r.area.toLowerCase().contains(q) ||
+                r.address.toLowerCase().contains(q);
           }).toList();
 
     final matchingFoods = q.isEmpty
@@ -106,7 +118,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         : SampleData.foods.where((f) {
             return f.name.toLowerCase().contains(q) ||
                 f.description.toLowerCase().contains(q) ||
-                f.category.toLowerCase().contains(q);
+                f.category.toLowerCase().contains(q) ||
+                f.tags.any((t) => t.toLowerCase().contains(q));
           }).toList();
 
     final totalResults = matchingRestaurants.length + matchingFoods.length;
@@ -121,8 +134,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           controller: _searchController,
           autofocus: true,
           decoration: InputDecoration(
-            hintText: 'Search restaurants, biryani, pizza...',
-            hintStyle: const TextStyle(color: AppColors.textLight, fontSize: 15),
+            hintText: 'Search restaurants, biryani, burgers, bbq...',
+            hintStyle: const TextStyle(color: AppColors.textLight, fontSize: 14),
             border: InputBorder.none,
             suffixIcon: query.isNotEmpty
                 ? IconButton(
@@ -135,6 +148,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 : null,
           ),
           onChanged: (val) => setState(() => query = val),
+          onSubmitted: (val) {
+            if (val.trim().isNotEmpty) {
+              ref.read(recentSearchesProvider.notifier).addSearch(val.trim());
+            }
+          },
         ),
       ),
       body: query.isEmpty
@@ -143,8 +161,47 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Trending Searches', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
+                  // 1. Recent Searches (If Any)
+                  if (recentSearches.isNotEmpty) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Recent Searches',
+                          style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            ref.read(recentSearchesProvider.notifier).clearSearches();
+                          },
+                          child: const Text('Clear All', style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: recentSearches.map((search) {
+                        return InputChip(
+                          avatar: const Icon(Icons.history, size: 16, color: Colors.grey),
+                          label: Text(search),
+                          backgroundColor: AppColors.white,
+                          side: BorderSide(color: Colors.grey.shade300),
+                          labelStyle: const TextStyle(color: AppColors.textDark, fontSize: 13),
+                          onDeleted: () {
+                            ref.read(recentSearchesProvider.notifier).removeSearch(search);
+                          },
+                          onPressed: () => _performSearch(search),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // 2. Trending Keywords
+                  const Text('Trending Searches', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                  const SizedBox(height: 10),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -154,17 +211,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         label: Text(keyword),
                         backgroundColor: AppColors.white,
                         side: BorderSide(color: Colors.grey.shade300),
-                        labelStyle: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w500),
-                        onPressed: () {
-                          _searchController.text = keyword;
-                          setState(() => query = keyword);
-                        },
+                        labelStyle: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w500, fontSize: 13),
+                        onPressed: () => _performSearch(keyword),
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: 32),
-                  const Text('Popular Cuisines', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 28),
+
+                  // 3. Popular Cuisines
+                  const Text('Popular Cuisines in Bahawalpur', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                  const SizedBox(height: 10),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -173,10 +229,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         label: Text(cat),
                         backgroundColor: AppColors.white,
                         side: BorderSide(color: Colors.grey.shade300),
-                        onSelected: (_) {
-                          _searchController.text = cat;
-                          setState(() => query = cat);
-                        },
+                        labelStyle: const TextStyle(fontSize: 13),
+                        onSelected: (_) => _performSearch(cat),
                       );
                     }).toList(),
                   ),

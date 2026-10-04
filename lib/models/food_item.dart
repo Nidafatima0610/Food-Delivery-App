@@ -11,6 +11,7 @@ class FoodItem {
   final bool available;
   final int reviewCount;
   final List<String> addOns;
+  final List<String> tags;
 
   FoodItem({
     required this.id,
@@ -25,13 +26,16 @@ class FoodItem {
     this.available = true,
     this.reviewCount = 45,
     this.addOns = const [],
+    this.tags = const [],
   });
+
+  bool get isAvailable => available;
 
   Map<String, dynamic> toJson() => {
     'id': id, 'restaurantId': restaurantId, 'name': name, 'description': description,
     'image': image, 'price': price, 'category': category, 'rating': rating,
     'popular': popular, 'available': available,
-    'reviewCount': reviewCount, 'addOns': addOns,
+    'reviewCount': reviewCount, 'addOns': addOns, 'tags': tags,
   };
 
   factory FoodItem.fromJson(Map<String, dynamic> json) => FoodItem(
@@ -40,5 +44,6 @@ class FoodItem {
     popular: json['popular'] ?? false, available: json['available'] ?? true,
     reviewCount: json['reviewCount'] ?? 45,
     addOns: List<String>.from(json['addOns'] ?? []),
+    tags: List<String>.from(json['tags'] ?? []),
   );
 }
